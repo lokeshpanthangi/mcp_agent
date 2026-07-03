@@ -17,13 +17,26 @@ export interface UiMessage {
   error?: string;
 }
 
-function Reasoning({ text, streaming }: { text: string; streaming?: boolean }) {
-  const [open, setOpen] = useState(streaming ?? false);
+function Reasoning({
+  text,
+  streaming,
+  hasContent,
+}: {
+  text: string;
+  streaming?: boolean;
+  hasContent?: boolean;
+}) {
+  // Auto-open only while actively thinking (streaming, before any answer).
+  // Once the answer starts (or on reload) it collapses; a manual click overrides.
+  const [userToggled, setUserToggled] = useState<boolean | null>(null);
+  const auto = !!streaming && !hasContent;
+  const open = userToggled ?? auto;
+  const thinking = !!streaming && !hasContent;
   return (
     <div className={`reasoning ${open ? "open" : ""}`}>
-      <button className="reasoning-toggle" onClick={() => setOpen((o) => !o)}>
+      <button className="reasoning-toggle" onClick={() => setUserToggled(!open)}>
         <span className="spark">✦</span>
-        {streaming ? "Thinking…" : "Reasoning"}
+        {thinking ? "Thinking…" : "Reasoning"}
         <span className="chevron">{open ? "▾" : "▸"}</span>
       </button>
       {open && <div className="reasoning-body">{text}</div>}
@@ -74,7 +87,9 @@ export default function Message({ msg }: { msg: UiMessage }) {
     <div className="msg assistant">
       <div className="avatar">✦</div>
       <div className="assistant-body">
-        {msg.reasoning && <Reasoning text={msg.reasoning} streaming={msg.streaming} />}
+        {msg.reasoning && (
+          <Reasoning text={msg.reasoning} streaming={msg.streaming} hasContent={!!msg.content} />
+        )}
         {msg.tools?.map((t, i) => (
           <ToolChip key={i} tool={t} />
         ))}

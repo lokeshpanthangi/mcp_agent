@@ -7,6 +7,7 @@ interface Props {
   onSelect: (id: number) => void;
   onNewChat: () => void;
   onOpenMcp: () => void;
+  onOpenSettings: () => void;
   onLogout: () => void;
 }
 
@@ -17,6 +18,7 @@ export default function Sidebar({
   onSelect,
   onNewChat,
   onOpenMcp,
+  onOpenSettings,
   onLogout,
 }: Props) {
   return (
@@ -49,6 +51,9 @@ export default function Sidebar({
       <div className="sidebar-bottom">
         <button className="mcp-btn" onClick={onOpenMcp}>
           <span>🔧</span> MCP Servers
+        </button>
+        <button className="mcp-btn" onClick={onOpenSettings}>
+          <span>⚙</span> Settings
         </button>
         <div className="user-row">
           <div className="user-avatar">{user.email[0].toUpperCase()}</div>

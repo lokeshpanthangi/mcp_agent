@@ -28,10 +28,14 @@ backend/
     │   ├── routes.py         HTTP wiring only: POST/GET/DELETE /mcp
     │   ├── logic.py           Business logic the routes call
     │   └── database.py       McpServer table & queries
-    └── agent/              Feature: chat + conversations
-        ├── routes.py         HTTP wiring only: POST /chat (SSE), conversation CRUD
-        ├── logic.py           Business logic the routes call (calls core/engine.py)
-        └── database.py       Conversation + Message tables & queries
+    ├── agent/              Feature: chat + conversations
+    │   ├── routes.py         HTTP wiring only: POST /chat (SSE), conversation CRUD
+    │   ├── logic.py           Business logic the routes call (calls core/engine.py)
+    │   └── database.py       Conversation + Message tables & queries
+    └── settings/           Feature: per-user system prompt + Ollama API key
+        ├── routes.py         HTTP wiring only: GET/PUT /settings
+        ├── logic.py           Effective/display/save with defaults from prompts.py + .env
+        └── database.py       UserSettings table & queries
 ```
 
 Adding a new feature (e.g. "billing") means adding `api/billing/{routes.py,
@@ -101,6 +105,7 @@ Exactly three files. Each has one job.
 | `api/<feature>/routes.py` → its own `logic.py`            | ✅       |
 | `api/<feature>/logic.py` → its own `database.py`          | ✅       |
 | `api/<feature>/logic.py` → another feature's `database.py`| ✅ (public interface) |
+| `api/<feature>/logic.py` → another feature's `logic.py`   | ✅ (compose resolved logic, e.g. agent→settings) |
 | `api/<feature>/routes.py` → its own `database.py` directly | ❌ (must go through `logic.py`) |
 | `api/<feature>/*` → another feature's `routes.py`          | ❌  |
 | any feature → `backend/database.py` (root adapter)        | ✅       |

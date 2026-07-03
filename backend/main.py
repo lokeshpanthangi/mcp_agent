@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.agent import routes as agent_routes
 from api.auth import routes as auth_routes
 from api.mcp import routes as mcp_routes
+from api.settings import routes as settings_routes
 from config import settings
 from database import create_db_and_tables
 
@@ -28,6 +29,7 @@ app.add_middleware(
 app.include_router(auth_routes.router)
 app.include_router(mcp_routes.router)
 app.include_router(agent_routes.router)
+app.include_router(settings_routes.router)
 
 
 @app.get("/health")

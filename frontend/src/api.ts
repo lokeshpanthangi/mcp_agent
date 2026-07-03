@@ -45,6 +45,12 @@ export interface Conversation {
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  reasoning?: string | null;
+}
+export interface Settings {
+  system_prompt: string;
+  ollama_api_key: string;
+  default_prompt: string;
 }
 export interface McpServer {
   id: number;
@@ -86,6 +92,17 @@ export function attachMcp(name: string, url: string): Promise<McpServer> {
 }
 export function detachMcp(id: number): Promise<void> {
   return req<void>(`/mcp/${id}`, { method: "DELETE" });
+}
+
+// ── Settings ─────────────────────────────
+export function getSettings(): Promise<Settings> {
+  return req<Settings>("/settings");
+}
+export function updateSettings(system_prompt: string, ollama_api_key: string): Promise<Settings> {
+  return req<Settings>("/settings", {
+    method: "PUT",
+    body: JSON.stringify({ system_prompt, ollama_api_key }),
+  });
 }
 
 // ── Chat (SSE over fetch) ────────────────

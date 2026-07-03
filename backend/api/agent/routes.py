@@ -24,6 +24,7 @@ class ConversationResponse(BaseModel):
 class MessageResponse(BaseModel):
     role: str
     content: str
+    reasoning: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -56,7 +57,9 @@ def get_messages_route(
     session: Session = Depends(get_session),
 ) -> list[MessageResponse]:
     messages = get_conversation_messages(session, user.id, conversation_id)
-    return [MessageResponse(role=m.role, content=m.content) for m in messages]
+    return [
+        MessageResponse(role=m.role, content=m.content, reasoning=m.reasoning) for m in messages
+    ]
 
 
 @router.post("/chat")

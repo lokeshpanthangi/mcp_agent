@@ -17,6 +17,7 @@ from api.agent.database import (
     set_conversation_title,
 )
 from api.mcp.database import McpServer, list_mcp_servers_for_user
+from api.settings.logic import get_effective_settings
 from config import settings
 from core.engine import get_agent
 from database import engine
@@ -82,8 +83,12 @@ async def chat_stream(
         set_conversation_title(session, conv, message[:60])
 
     servers = list_mcp_servers_for_user(session, user_id)
+    eff = get_effective_settings(session, user_id)
     try:
-        agent = await _with_timeout(get_agent(_mcp_config(servers)), settings.TOOL_TIMEOUT_SECONDS)
+        agent = await _with_timeout(
+            get_agent(_mcp_config(servers), eff["system_prompt"], eff["api_key"]),
+            settings.TOOL_TIMEOUT_SECONDS,
+        )
     except TimeoutError as exc:
         raise HTTPException(status.HTTP_504_GATEWAY_TIMEOUT, "Timed out loading MCP tools") from exc
     except Exception as exc:
@@ -91,6 +96,7 @@ async def chat_stream(
 
     async def stream() -> AsyncIterator[str]:
         answer_parts: list[str] = []
+        reasoning_parts: list[str] = []
         events = agent.astream_events({"messages": history}, version="v2")
         try:
             while True:
@@ -104,6 +110,7 @@ async def chat_stream(
                     chunk = ev["data"]["chunk"]
                     reasoning = chunk.additional_kwargs.get("reasoning_content")
                     if reasoning:
+                        reasoning_parts.append(reasoning)
                         yield _sse("reasoning", {"text": reasoning})
                     if chunk.content:
                         answer_parts.append(chunk.content)
@@ -123,7 +130,13 @@ async def chat_stream(
 
         # Fresh session: the request-scoped one is closed once streaming begins.
         with Session(engine) as db:
-            create_message(db, conversation_id, "assistant", "".join(answer_parts))
+            create_message(
+                db,
+                conversation_id,
+                "assistant",
+                "".join(answer_parts),
+                reasoning="".join(reasoning_parts) or None,
+            )
 
         yield _sse("done", {})
 

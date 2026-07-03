@@ -19,6 +19,7 @@ class Message(SQLModel, table=True):
     conversation_id: int = Field(foreign_key="conversation.id", index=True)
     role: str
     content: str
+    reasoning: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -46,8 +47,16 @@ def list_messages(session: Session, conversation_id: int) -> list[Message]:
     )
 
 
-def create_message(session: Session, conversation_id: int, role: str, content: str) -> Message:
-    message = Message(conversation_id=conversation_id, role=role, content=content)
+def create_message(
+    session: Session,
+    conversation_id: int,
+    role: str,
+    content: str,
+    reasoning: str | None = None,
+) -> Message:
+    message = Message(
+        conversation_id=conversation_id, role=role, content=content, reasoning=reasoning
+    )
     session.add(message)
     session.commit()
     session.refresh(message)

@@ -11,6 +11,7 @@ import {
 import Chat from "./components/Chat";
 import Login from "./components/Login";
 import McpPanel from "./components/McpPanel";
+import SettingsModal from "./components/SettingsModal";
 import Sidebar from "./components/Sidebar";
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [showMcp, setShowMcp] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const refreshConversations = useCallback(async () => {
     const list = await listConversations();
@@ -77,6 +79,7 @@ export default function App() {
         onSelect={setActiveId}
         onNewChat={newChat}
         onOpenMcp={() => setShowMcp(true)}
+        onOpenSettings={() => setShowSettings(true)}
         onLogout={logout}
       />
       <main className="main">
@@ -95,6 +98,7 @@ export default function App() {
         )}
       </main>
       {showMcp && <McpPanel onClose={() => setShowMcp(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

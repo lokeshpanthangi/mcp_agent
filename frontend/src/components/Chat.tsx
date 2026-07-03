@@ -17,7 +17,14 @@ export default function Chat({ conversationId, onFirstMessage }: Props) {
   useEffect(() => {
     let cancelled = false;
     getMessages(conversationId).then((history) => {
-      if (!cancelled) setMessages(history.map((m) => ({ role: m.role, content: m.content })));
+      if (!cancelled)
+        setMessages(
+          history.map((m) => ({
+            role: m.role,
+            content: m.content,
+            reasoning: m.reasoning ?? undefined,
+          })),
+        );
     });
     return () => {
       cancelled = true;
