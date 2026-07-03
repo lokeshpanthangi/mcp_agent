@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+email-validator
+sqlmodel
+langchain
+langchain-ollama
+langchain-mcp-adapters
+langgraph
