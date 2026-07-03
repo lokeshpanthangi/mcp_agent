@@ -2,8 +2,7 @@ from collections.abc import Generator
 
 from sqlmodel import Session, SQLModel, create_engine
 
-from app import models  # noqa: F401  (registers tables on SQLModel.metadata)
-from app.config import settings
+from config import settings
 
 connect_args = (
     {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
