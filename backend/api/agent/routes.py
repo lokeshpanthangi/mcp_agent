@@ -69,4 +69,12 @@ async def chat_route(
     session: Session = Depends(get_session),
 ) -> StreamingResponse:
     stream = await chat_stream(session, user.id, body.conversation_id, body.message)
-    return StreamingResponse(stream, media_type="text/event-stream")
+    return StreamingResponse(
+        stream,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
