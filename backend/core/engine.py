@@ -1,9 +1,9 @@
 import hashlib
 import json
 
+from deepagents import create_deep_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_ollama import ChatOllama
-from langgraph.prebuilt import create_react_agent
 
 from config import settings
 
@@ -31,12 +31,13 @@ async def get_agent(
     api_key: str | None,
     disabled_tools: set[str] | None = None,
 ):
-    """Build (or reuse) a LangGraph agent for the given tools + prompt + key.
+    """Build (or reuse) a Deep Agent for the given tools + prompt + key.
 
     mcp_config is the MultiServerMCPClient shape:
         {"server_name": {"url": ..., "transport": ..., "headers": {...}?}}
-    An empty dict yields a plain chat agent with no tools. `disabled_tools` is a
-    set of tool names to exclude (per-tool user toggles).
+    An empty dict yields an agent with only the built-in Deep Agent tools
+    (planning, virtual filesystem, subagents). `disabled_tools` is a set of MCP
+    tool names to exclude (per-tool user toggles).
     All inputs are plain data — the engine stays DB/HTTP-agnostic.
     """
     disabled = disabled_tools or set()
@@ -55,6 +56,10 @@ async def get_agent(
         client = MultiServerMCPClient(mcp_config)
         tools = [t for t in await client.get_tools() if t.name not in disabled]
 
-    agent = create_react_agent(make_model(api_key), tools, prompt=system_prompt)
+    agent = create_deep_agent(
+        model=make_model(api_key),
+        tools=tools,
+        system_prompt=system_prompt,
+    )
     _agent_cache[key] = agent
     return agent
