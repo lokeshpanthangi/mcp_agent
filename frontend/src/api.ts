@@ -58,6 +58,26 @@ export interface McpServer {
   url: string;
   transport: string;
 }
+export interface McpToolInfo {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+  enabled: boolean;
+}
+export interface McpPromptInfo {
+  name: string;
+  description: string;
+}
+export interface McpInspect {
+  id: number;
+  name: string;
+  url: string;
+  ok: boolean;
+  needs_auth: boolean;
+  error: string | null;
+  tools: McpToolInfo[];
+  prompts: McpPromptInfo[];
+}
 
 // ── Auth ─────────────────────────────────
 export async function login(email: string): Promise<User> {
@@ -92,6 +112,21 @@ export function attachMcp(name: string, url: string): Promise<McpServer> {
 }
 export function detachMcp(id: number): Promise<void> {
   return req<void>(`/mcp/${id}`, { method: "DELETE" });
+}
+export function inspectMcp(id: number): Promise<McpInspect> {
+  return req<McpInspect>(`/mcp/${id}/inspect`);
+}
+export function connectMcp(id: number, token: string): Promise<McpInspect> {
+  return req<McpInspect>(`/mcp/${id}/connect`, {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+export function toggleTool(id: number, toolName: string, enabled: boolean): Promise<void> {
+  return req<void>(`/mcp/${id}/tools/${encodeURIComponent(toolName)}`, {
+    method: "PUT",
+    body: JSON.stringify({ enabled }),
+  });
 }
 
 // ── Settings ─────────────────────────────

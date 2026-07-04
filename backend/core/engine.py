@@ -25,15 +25,27 @@ def make_model(api_key: str | None) -> ChatOllama:
     )
 
 
-async def get_agent(mcp_config: dict, system_prompt: str, api_key: str | None):
+async def get_agent(
+    mcp_config: dict,
+    system_prompt: str,
+    api_key: str | None,
+    disabled_tools: set[str] | None = None,
+):
     """Build (or reuse) a LangGraph agent for the given tools + prompt + key.
 
     mcp_config is the MultiServerMCPClient shape:
         {"server_name": {"url": ..., "transport": ..., "headers": {...}?}}
-    An empty dict yields a plain chat agent with no tools.
-    All three inputs are plain data — the engine stays DB/HTTP-agnostic.
+    An empty dict yields a plain chat agent with no tools. `disabled_tools` is a
+    set of tool names to exclude (per-tool user toggles).
+    All inputs are plain data — the engine stays DB/HTTP-agnostic.
     """
-    fingerprint = {"mcp": mcp_config, "prompt": system_prompt, "key": api_key}
+    disabled = disabled_tools or set()
+    fingerprint = {
+        "mcp": mcp_config,
+        "prompt": system_prompt,
+        "key": api_key,
+        "disabled": sorted(disabled),
+    }
     key = hashlib.sha256(json.dumps(fingerprint, sort_keys=True).encode()).hexdigest()
     if key in _agent_cache:
         return _agent_cache[key]
@@ -41,7 +53,7 @@ async def get_agent(mcp_config: dict, system_prompt: str, api_key: str | None):
     tools = []
     if mcp_config:
         client = MultiServerMCPClient(mcp_config)
-        tools = await client.get_tools()
+        tools = [t for t in await client.get_tools() if t.name not in disabled]
 
     agent = create_react_agent(make_model(api_key), tools, prompt=system_prompt)
     _agent_cache[key] = agent

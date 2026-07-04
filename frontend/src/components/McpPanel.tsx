@@ -1,5 +1,143 @@
 import { useEffect, useState } from "react";
-import { attachMcp, detachMcp, listMcp, McpServer } from "../api";
+import {
+  attachMcp,
+  connectMcp,
+  detachMcp,
+  inspectMcp,
+  listMcp,
+  McpInspect,
+  McpServer,
+  toggleTool,
+} from "../api";
+
+function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: number) => void }) {
+  const [data, setData] = useState<McpInspect | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState("");
+  const [connecting, setConnecting] = useState(false);
+
+  async function inspect() {
+    setLoading(true);
+    try {
+      setData(await inspectMcp(server.id));
+    } catch {
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    inspect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [server.id]);
+
+  async function connect() {
+    if (!token.trim()) return;
+    setConnecting(true);
+    try {
+      setData(await connectMcp(server.id, token.trim()));
+      setToken("");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function flip(name: string, enabled: boolean) {
+    // optimistic
+    setData((d) =>
+      d ? { ...d, tools: d.tools.map((t) => (t.name === name ? { ...t, enabled } : t)) } : d,
+    );
+    await toggleTool(server.id, name, enabled);
+  }
+
+  const enabledCount = data?.tools.filter((t) => t.enabled).length ?? 0;
+
+  return (
+    <div className="server-card">
+      <div className="server-card-head">
+        <div className="server-card-info">
+          <span className="mcp-name">{server.name}</span>
+          <span className="mcp-url">{server.url}</span>
+        </div>
+        <div className="server-card-head-right">
+          {data?.ok && (
+            <span className="tool-count">
+              {enabledCount}/{data.tools.length} tools on
+            </span>
+          )}
+          <button className="icon-btn danger" title="Remove" onClick={() => onDetach(server.id)}>
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {loading && <div className="empty-note">Inspecting…</div>}
+
+      {!loading && data?.needs_auth && (
+        <div className="auth-box">
+          <div className="auth-msg">🔒 This server requires authentication.</div>
+          <div className="auth-row">
+            <input
+              type="password"
+              placeholder="Paste access token…"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+            />
+            <button className="primary-btn small" onClick={connect} disabled={connecting}>
+              {connecting ? "Connecting…" : "Connect"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && data && !data.needs_auth && !data.ok && (
+        <div className="modal-error">Couldn’t connect: {data.error}</div>
+      )}
+
+      {!loading && data?.ok && (
+        <>
+          <div className="section-label">
+            Tools <span className="dim">({data.tools.length})</span>
+          </div>
+          {data.tools.length === 0 && <div className="empty-note">No tools exposed.</div>}
+          <div className="tool-toggle-list">
+            {data.tools.map((t) => (
+              <label className="tool-toggle" key={t.name}>
+                <input
+                  type="checkbox"
+                  checked={t.enabled}
+                  onChange={(e) => flip(t.name, e.target.checked)}
+                />
+                <span className="switch" />
+                <span className="tool-toggle-text">
+                  <span className="tool-toggle-name">{t.name}</span>
+                  {t.description && <span className="tool-toggle-desc">{t.description}</span>}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          {data.prompts.length > 0 && (
+            <>
+              <div className="section-label">
+                Prompts <span className="dim">({data.prompts.length})</span>
+              </div>
+              <div className="prompt-list">
+                {data.prompts.map((p) => (
+                  <div className="prompt-item" key={p.name}>
+                    <span className="prompt-name">{p.name}</span>
+                    {p.description && <span className="prompt-desc">{p.description}</span>}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function McpPanel({ onClose }: { onClose: () => void }) {
   const [servers, setServers] = useState<McpServer[]>([]);
@@ -44,7 +182,7 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>MCP Servers</h2>
           <button className="icon-btn" onClick={onClose}>
@@ -52,8 +190,8 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="modal-sub">
-          Attach a Model Context Protocol server to give the agent its tools. They apply to every
-          chat.
+          Attach a Model Context Protocol server. Its tools and prompts are shown below — toggle
+          exactly which tools the agent may use.
         </p>
 
         <form className="mcp-form" onSubmit={add}>
@@ -65,18 +203,10 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
         </form>
         {error && <div className="modal-error">{error}</div>}
 
-        <div className="mcp-list">
+        <div className="server-list">
           {servers.length === 0 && <div className="empty-note">No MCP servers attached yet.</div>}
           {servers.map((s) => (
-            <div className="mcp-item" key={s.id}>
-              <div className="mcp-info">
-                <span className="mcp-name">{s.name}</span>
-                <span className="mcp-url">{s.url}</span>
-              </div>
-              <button className="icon-btn danger" onClick={() => remove(s.id)}>
-                ✕
-              </button>
-            </div>
+            <ServerCard key={s.id} server={s} onDetach={remove} />
           ))}
         </div>
       </div>

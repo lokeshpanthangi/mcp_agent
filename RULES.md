@@ -13,9 +13,11 @@ backend/
 ├── config.py             Settings (.env) — shared across all features.
 ├── database.py            Core DB adapter ONLY: engine, session/connection helpers,
 │                           create_db_and_tables(). No feature-specific queries here.
-├── core/                 Core agent engine — NOT HTTP-facing, no DB access.
-│   └── engine.py           Builds the LLM + LangGraph agent (ChatOllama, create_react_agent,
-│                           MCP tool wiring). Pure Python in, agent out.
+├── core/                 Core engine — NOT HTTP-facing, no DB access. Plain data in/out.
+│   ├── engine.py           Builds the LLM + LangGraph agent (ChatOllama, create_react_agent,
+│   │                       MCP tool wiring, per-tool filtering). Pure Python in, agent out.
+│   └── mcp_client.py        Connects to one MCP server to list its tools + prompts
+│                           (inspection / auth detection). Returns plain dicts, never raises.
 ├── security/              Shared, non-HTTP security utilities.
 │   └── auth.py              get_current_user() dependency, token generation. Orchestrates
 │                           calls to api/auth/database.py — never writes raw queries itself.

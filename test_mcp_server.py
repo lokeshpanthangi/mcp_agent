@@ -22,5 +22,11 @@ def hang_forever() -> str:
     return "should never get here"
 
 
+@mcp.prompt()
+def summarize(topic: str) -> str:
+    """Draft a short summary prompt for a given topic."""
+    return f"Write a concise, three-sentence summary about {topic}."
+
+
 if __name__ == "__main__":
     mcp.run(transport="streamable-http")

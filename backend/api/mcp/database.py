@@ -14,6 +14,7 @@ class McpServer(SQLModel, table=True):
     url: str
     transport: str = "streamable_http"
     headers_json: str | None = None
+    disabled_tools_json: str | None = None  # JSON list of tool names turned OFF
     created_at: datetime = Field(default_factory=utcnow)
 
 
@@ -49,3 +50,21 @@ def get_mcp_server(session: Session, server_id: int) -> McpServer | None:
 def delete_mcp_server(session: Session, server: McpServer) -> None:
     session.delete(server)
     session.commit()
+
+
+def update_server_headers(session: Session, server: McpServer, headers_json: str | None) -> McpServer:
+    server.headers_json = headers_json
+    session.add(server)
+    session.commit()
+    session.refresh(server)
+    return server
+
+
+def update_server_disabled_tools(
+    session: Session, server: McpServer, disabled_tools_json: str | None
+) -> McpServer:
+    server.disabled_tools_json = disabled_tools_json
+    session.add(server)
+    session.commit()
+    session.refresh(server)
+    return server

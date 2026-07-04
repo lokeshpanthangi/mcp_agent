@@ -16,7 +16,8 @@ from api.agent.database import (
     list_messages,
     set_conversation_title,
 )
-from api.mcp.database import McpServer, list_mcp_servers_for_user
+from api.mcp.database import list_mcp_servers_for_user
+from api.mcp.logic import config_entry, disabled_tool_names
 from api.settings.logic import get_effective_settings
 from config import settings
 from core.engine import get_agent
@@ -58,16 +59,6 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def _mcp_config(servers: list[McpServer]) -> dict:
-    config = {}
-    for s in servers:
-        entry: dict = {"url": s.url, "transport": s.transport}
-        if s.headers_json:
-            entry["headers"] = json.loads(s.headers_json)
-        config[s.name] = entry
-    return config
-
-
 async def chat_stream(
     session: Session, user_id: int, conversation_id: int, message: str
 ) -> AsyncIterator[str]:
@@ -83,10 +74,12 @@ async def chat_stream(
         set_conversation_title(session, conv, message[:60])
 
     servers = list_mcp_servers_for_user(session, user_id)
+    mcp_config = {s.name: config_entry(s) for s in servers}
+    disabled = disabled_tool_names(servers)
     eff = get_effective_settings(session, user_id)
     try:
         agent = await _with_timeout(
-            get_agent(_mcp_config(servers), eff["system_prompt"], eff["api_key"]),
+            get_agent(mcp_config, eff["system_prompt"], eff["api_key"], disabled),
             settings.TOOL_TIMEOUT_SECONDS,
         )
     except TimeoutError as exc:
