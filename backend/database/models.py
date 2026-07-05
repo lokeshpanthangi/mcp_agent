@@ -77,3 +77,4 @@ class UserSettings(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     system_prompt: str | None = None
     ollama_api_key: str | None = None
+    model: str | None = None  # chosen Ollama model (falls back to the .env default)

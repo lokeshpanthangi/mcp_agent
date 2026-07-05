@@ -51,6 +51,7 @@ export interface Settings {
   system_prompt: string;
   ollama_api_key: string;
   default_prompt: string;
+  model: string;
 }
 export interface McpServer {
   id: number;
@@ -74,6 +75,7 @@ export interface McpInspect {
   url: string;
   ok: boolean;
   needs_auth: boolean;
+  supports_oauth: boolean;
   error: string | null;
   tools: McpToolInfo[];
   prompts: McpPromptInfo[];
@@ -122,6 +124,10 @@ export function connectMcp(id: number, token: string): Promise<McpInspect> {
     body: JSON.stringify({ token }),
   });
 }
+// Begin OAuth login for an attached-by-URL server; returns the authorization URL.
+export function startServerOAuth(id: number): Promise<{ authorization_url?: string }> {
+  return req(`/mcp/${id}/oauth`, { method: "POST" });
+}
 export function toggleTool(id: number, toolName: string, enabled: boolean): Promise<void> {
   return req<void>(`/mcp/${id}/tools/${encodeURIComponent(toolName)}`, {
     method: "PUT",
@@ -160,6 +166,16 @@ export function updateSettings(system_prompt: string, ollama_api_key: string): P
     method: "PUT",
     body: JSON.stringify({ system_prompt, ollama_api_key }),
   });
+}
+export interface ModelInfo {
+  name: string;
+  reasoning: boolean;
+}
+export function listModels(): Promise<ModelInfo[]> {
+  return req<ModelInfo[]>("/settings/models");
+}
+export function setModel(model: string): Promise<Settings> {
+  return req<Settings>("/settings/model", { method: "PUT", body: JSON.stringify({ model }) });
 }
 
 // ── Chat (SSE over fetch) ────────────────

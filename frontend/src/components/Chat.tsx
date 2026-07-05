@@ -1,13 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { chat, getMessages } from "../api";
+import { chat, getMessages, ModelInfo } from "../api";
+import { playComplete, playSend } from "../sound";
 import Message, { UiMessage } from "./Message";
+import ModelSelector from "./ModelSelector";
 
 interface Props {
   conversationId: number;
   onFirstMessage: () => void;
+  model: string;
+  models: ModelInfo[];
+  onSelectModel: (name: string) => void;
 }
 
-export default function Chat({ conversationId, onFirstMessage }: Props) {
+export default function Chat({
+  conversationId,
+  onFirstMessage,
+  model,
+  models,
+  onSelectModel,
+}: Props) {
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -50,6 +61,7 @@ export default function Chat({ conversationId, onFirstMessage }: Props) {
     const isFirst = messages.length === 0;
     setInput("");
     setStreaming(true);
+    playSend();
     setMessages((prev) => [
       ...prev,
       { role: "user", content: text },
@@ -76,6 +88,7 @@ export default function Chat({ conversationId, onFirstMessage }: Props) {
       onDone: () => {
         patchLast((m) => ({ ...m, streaming: false }));
         setStreaming(false);
+        playComplete();
         if (isFirst) onFirstMessage();
       },
     });
@@ -107,6 +120,9 @@ export default function Chat({ conversationId, onFirstMessage }: Props) {
       </div>
 
       <div className="composer">
+        <div className="composer-bar">
+          <ModelSelector model={model} models={models} onSelect={onSelectModel} />
+        </div>
         <div className="composer-inner">
           <textarea
             value={input}

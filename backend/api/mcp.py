@@ -15,6 +15,7 @@ from mcp_servers.service import (
     inspect_mcp_server,
     list_connectors,
     list_mcp_servers,
+    start_server_oauth,
     toggle_tool,
 )
 
@@ -80,6 +81,7 @@ class InspectResponse(BaseModel):
     url: str
     ok: bool
     needs_auth: bool
+    supports_oauth: bool = False  # server offers OAuth login (show a Login button)
     error: str | None
     tools: list[ToolInfo]
     prompts: list[PromptInfo]
@@ -142,6 +144,17 @@ async def connect_route(
 ) -> dict:
     headers = {"Authorization": f"Bearer {body.token}"}
     return await connect_mcp_server(session, user.id, server_id, headers)
+
+
+@router.post("/{server_id}/oauth", response_model=ConnectorAuthResponse)
+async def server_oauth_route(
+    server_id: int,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> ConnectorAuthResponse:
+    """Begin OAuth login for an attached-by-URL server; returns the authorization URL."""
+    url = await start_server_oauth(session, user.id, server_id)
+    return ConnectorAuthResponse(authorization_url=url)
 
 
 @router.put("/{server_id}/tools/{tool_name}", status_code=status.HTTP_204_NO_CONTENT)

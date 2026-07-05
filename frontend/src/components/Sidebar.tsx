@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Conversation, User } from "../api";
+import { isMuted, setMuted } from "../sound";
 
 interface Props {
   user: User;
@@ -9,6 +11,7 @@ interface Props {
   onOpenMcp: () => void;
   onOpenSettings: () => void;
   onLogout: () => void;
+  onCollapse: () => void;
 }
 
 export default function Sidebar({
@@ -20,13 +23,24 @@ export default function Sidebar({
   onOpenMcp,
   onOpenSettings,
   onLogout,
+  onCollapse,
 }: Props) {
+  const [muted, setMutedState] = useState(isMuted());
+  const toggleSound = () => {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+  };
   return (
     <aside className="sidebar">
+      <div className="sidebar-inner">
       <div className="sidebar-top">
         <div className="brand">
           <span className="brand-mark">✦</span>
           <span className="brand-name">MCP Agent</span>
+          <button className="icon-btn sidebar-collapse-btn" title="Hide sidebar" onClick={onCollapse}>
+            «
+          </button>
         </div>
         <button className="new-chat" onClick={onNewChat}>
           <span>＋</span> New chat
@@ -55,6 +69,9 @@ export default function Sidebar({
         <button className="mcp-btn" onClick={onOpenSettings}>
           <span>⚙</span> Settings
         </button>
+        <button className="mcp-btn" onClick={toggleSound}>
+          <span>{muted ? "🔇" : "🔊"}</span> {muted ? "Sound off" : "Sound on"}
+        </button>
         <div className="user-row">
           <div className="user-avatar">{user.email[0].toUpperCase()}</div>
           <span className="user-email">{user.email}</span>
@@ -62,6 +79,7 @@ export default function Sidebar({
             ⏻
           </button>
         </div>
+      </div>
       </div>
     </aside>
   );

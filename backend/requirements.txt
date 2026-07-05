@@ -7,4 +7,3 @@ langchain
 langchain-ollama
 langchain-mcp-adapters
 langgraph
-langgraph-bigtool

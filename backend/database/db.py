@@ -14,6 +14,20 @@ def create_db_and_tables() -> None:
     from database import models  # noqa: F401 - import registers the tables
 
     SQLModel.metadata.create_all(engine)
+    _add_missing_columns()
+
+
+def _add_missing_columns() -> None:
+    """Add nullable columns introduced after a table already existed (SQLite)."""
+    from sqlalchemy import text
+
+    needed = {"usersettings": [("model", "VARCHAR")]}
+    with engine.begin() as conn:
+        for table, columns in needed.items():
+            existing = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))}
+            for name, coltype in columns:
+                if name not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {coltype}"))
 
 
 def get_session() -> Generator[Session, None, None]:

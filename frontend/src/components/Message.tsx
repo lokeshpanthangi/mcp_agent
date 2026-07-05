@@ -85,7 +85,7 @@ export default function Message({ msg }: { msg: UiMessage }) {
 
   return (
     <div className="msg assistant">
-      <div className="avatar">✦</div>
+      <div className={`avatar ${msg.streaming ? "spinning" : ""}`}>✦</div>
       <div className="assistant-body">
         {msg.reasoning && (
           <Reasoning text={msg.reasoning} streaming={msg.streaming} hasContent={!!msg.content} />

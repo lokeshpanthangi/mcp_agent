@@ -66,7 +66,7 @@ async def chat_stream(
     # Broken/slow servers are skipped inside get_agent, so a single bad server
     # never fails the whole chat. The system prompt rides along as a system
     # message (the agent itself is prompt-agnostic and cached across users).
-    agent = await get_agent(mcp_config, eff["api_key"], disabled)
+    agent = await get_agent(mcp_config, eff["api_key"], eff["model"], disabled)
     messages = [("system", eff["system_prompt"]), *history]
 
     async def stream() -> AsyncIterator[str]:
@@ -84,8 +84,6 @@ async def chat_stream(
                     if chunk.content:
                         answer_parts.append(chunk.content)
                         yield _sse("token", {"text": chunk.content})
-                elif ev["name"] == "retrieve_tools":
-                    continue  # internal tool-selection step — not shown to the user
                 elif kind == "on_tool_start":
                     yield _sse("tool_call", {"name": ev["name"], "input": ev["data"].get("input")})
                 elif kind == "on_tool_end":

@@ -18,6 +18,7 @@ from database.mcp import (
     get_oauth_state,
     get_server_by_connector,
     list_mcp_servers_for_user,
+    set_server_oauth,
     sync_code_servers,
     update_server_disabled_tools,
     update_server_headers,
@@ -28,6 +29,8 @@ from database.models import McpServer, OAuthState
 from mcp_servers.connectors import CONNECTORS, CONNECTORS_BY_KEY
 
 logger = logging.getLogger(__name__)
+
+SERVER_PREFIX = "server:"  # OAuthState.connector_key marker for an attached-by-URL server
 
 
 # ── shared helpers ───────────────────────────────────────────────
@@ -104,10 +107,21 @@ async def inspect_mcp_server(session: Session, user_id: int, server_id: int) -> 
         "url": server.url,
         "ok": result["ok"],
         "needs_auth": result["needs_auth"],
+        # When auth is needed, does this server offer OAuth login (vs paste-a-token)?
+        "supports_oauth": await _supports_oauth(server.url) if result["needs_auth"] else False,
         "error": result["error"],
         "tools": tools,
         "prompts": result["prompts"],
     }
+
+
+async def _supports_oauth(url: str) -> bool:
+    """True if the server advertises OAuth with automatic client registration."""
+    try:
+        meta = await mcp_oauth.discover(url)
+        return bool(meta.get("registration_endpoint"))
+    except Exception:  # noqa: BLE001 - discovery failure just means "no OAuth login"
+        return False
 
 
 async def connect_mcp_server(
@@ -186,24 +200,29 @@ def _ensure_connector_server(session: Session, user_id: int, connector: dict) ->
     )
 
 
-async def start_connector_oauth(session: Session, user_id: int, connector: dict) -> str:
-    """Begin the OAuth flow for a connector; returns the authorization URL."""
-    connector_key = connector["key"]
+async def _begin_oauth(
+    session: Session, user_id: int, *, name: str, url: str, transport: str, connector_key: str
+) -> str:
+    """Discover + register + build an authorization URL for any MCP server.
+
+    Shared by catalog connectors and attached-by-URL servers; the target is
+    remembered in the OAuthState's connector_key (a catalog key or "server:<id>").
+    """
     redirect_uri = _redirect_uri()
     try:
-        meta = await mcp_oauth.discover(connector["url"])
+        meta = await mcp_oauth.discover(url)
         scope = " ".join(meta["scopes_supported"]) or None
         if not meta.get("registration_endpoint"):
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"{connector['name']} does not support automatic registration.",
+                f"{name} does not support OAuth login. Paste an access token instead.",
             )
         reg = await mcp_oauth.register_client(meta["registration_endpoint"], redirect_uri, scope)
     except HTTPException:
         raise
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(
-            status.HTTP_502_BAD_GATEWAY, f"Could not start OAuth for {connector['name']}: {exc}"
+            status.HTTP_502_BAD_GATEWAY, f"Could not start OAuth for {name}: {exc}"
         ) from exc
 
     verifier, challenge = mcp_oauth.new_pkce()
@@ -214,8 +233,8 @@ async def start_connector_oauth(session: Session, user_id: int, connector: dict)
             state=state,
             user_id=user_id,
             connector_key=connector_key,
-            mcp_url=connector["url"],
-            transport=connector["transport"],
+            mcp_url=url,
+            transport=transport,
             redirect_uri=redirect_uri,
             code_verifier=verifier,
             client_id=reg["client_id"],
@@ -236,6 +255,31 @@ async def start_connector_oauth(session: Session, user_id: int, connector: dict)
     )
 
 
+async def start_connector_oauth(session: Session, user_id: int, connector: dict) -> str:
+    """Begin the OAuth flow for a catalog connector; returns the authorization URL."""
+    return await _begin_oauth(
+        session,
+        user_id,
+        name=connector["name"],
+        url=connector["url"],
+        transport=connector["transport"],
+        connector_key=connector["key"],
+    )
+
+
+async def start_server_oauth(session: Session, user_id: int, server_id: int) -> str:
+    """Begin the OAuth flow for a user's attached-by-URL server; returns the auth URL."""
+    server = _owned_server(session, user_id, server_id)
+    return await _begin_oauth(
+        session,
+        user_id,
+        name=server.name,
+        url=server.url,
+        transport=server.transport,
+        connector_key=f"{SERVER_PREFIX}{server.id}",
+    )
+
+
 async def handle_oauth_callback(session: Session, state_str: str, code: str) -> str:
     """Exchange the code for tokens and store the connector as an MCP server."""
     st = get_oauth_state(session, state_str)
@@ -251,26 +295,33 @@ async def handle_oauth_callback(session: Session, state_str: str, code: str) -> 
         st.resource or st.mcp_url,
         st.client_secret,
     )
-    connector = CONNECTORS_BY_KEY[st.connector_key]
-    expires_at = _expiry(token.get("expires_in"))
-    upsert_connector_server(
-        session,
-        st.user_id,
-        st.connector_key,
-        connector["name"],
-        st.mcp_url,
-        st.transport,
-        json.dumps({"Authorization": f"Bearer {token['access_token']}"}),
-        {
-            "refresh_token": token.get("refresh_token"),
-            "token_endpoint": st.token_endpoint,
-            "client_id": st.client_id,
-            "client_secret": st.client_secret,
-            "expires_at": expires_at,
-        },
-    )
+    headers_json = json.dumps({"Authorization": f"Bearer {token['access_token']}"})
+    oauth = {
+        "refresh_token": token.get("refresh_token"),
+        "token_endpoint": st.token_endpoint,
+        "client_id": st.client_id,
+        "client_secret": st.client_secret,
+        "expires_at": _expiry(token.get("expires_in")),
+    }
+
+    if st.connector_key.startswith(SERVER_PREFIX):
+        # Attached-by-URL server: save the grant onto its existing row.
+        server = get_mcp_server(session, int(st.connector_key[len(SERVER_PREFIX):]))
+        if server is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "MCP server no longer exists")
+        set_server_oauth(session, server, headers_json, oauth)
+        name = server.name
+    else:
+        # Catalog connector: create/update its backing row.
+        connector = CONNECTORS_BY_KEY[st.connector_key]
+        upsert_connector_server(
+            session, st.user_id, st.connector_key, connector["name"],
+            st.mcp_url, st.transport, headers_json, oauth,
+        )
+        name = connector["name"]
+
     delete_oauth_state(session, st)
-    return connector["name"]
+    return name
 
 
 async def refresh_expired_tokens(session: Session, servers: list[McpServer]) -> None:

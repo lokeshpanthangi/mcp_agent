@@ -107,6 +107,20 @@ def update_server_oauth_token(
     return server
 
 
+def set_server_oauth(session: Session, server: McpServer, headers_json: str, oauth: dict) -> McpServer:
+    """Store a full OAuth grant (token + refresh bookkeeping) on an existing row."""
+    server.headers_json = headers_json
+    server.oauth_refresh_token = oauth.get("refresh_token")
+    server.oauth_token_endpoint = oauth.get("token_endpoint")
+    server.oauth_client_id = oauth.get("client_id")
+    server.oauth_client_secret = oauth.get("client_secret")
+    server.oauth_expires_at = oauth.get("expires_at")
+    session.add(server)
+    session.commit()
+    session.refresh(server)
+    return server
+
+
 # ── code-defined servers (servers.json) ──────────────────────────
 def sync_code_servers(session: Session, user_id: int) -> None:
     """Mirror servers.json into this user's rows so they show + run like any other.

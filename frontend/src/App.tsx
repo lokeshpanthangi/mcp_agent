@@ -3,11 +3,16 @@ import {
   clearToken,
   Conversation,
   createConversation,
+  getSettings,
   getToken,
   listConversations,
+  listModels,
   me,
+  ModelInfo,
+  setModel as saveModel,
   User,
 } from "./api";
+import AmbientBackground from "./components/AmbientBackground";
 import Chat from "./components/Chat";
 import Login from "./components/Login";
 import McpPanel from "./components/McpPanel";
@@ -21,6 +26,25 @@ export default function App() {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [showMcp, setShowMcp] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [model, setModelState] = useState("");
+  const [models, setModels] = useState<ModelInfo[]>([]);
+
+  // Load the model list + current selection once the user is known.
+  useEffect(() => {
+    if (!user) return;
+    getSettings().then((s) => setModelState(s.model)).catch(() => {});
+    listModels().then(setModels).catch(() => {});
+  }, [user]);
+
+  async function selectModel(name: string) {
+    setModelState(name); // optimistic
+    try {
+      await saveModel(name);
+    } catch {
+      /* keep the optimistic value; next load will reconcile */
+    }
+  }
 
   const refreshConversations = useCallback(async () => {
     const list = await listConversations();
@@ -67,11 +91,25 @@ export default function App() {
     setActiveId(null);
   }
 
-  if (!ready) return <div className="boot">✦</div>;
-  if (!user) return <Login onLoggedIn={afterLogin} />;
+  if (!ready)
+    return (
+      <>
+        <AmbientBackground />
+        <div className="boot">✦</div>
+      </>
+    );
+  if (!user)
+    return (
+      <>
+        <AmbientBackground />
+        <Login onLoggedIn={afterLogin} />
+      </>
+    );
 
   return (
-    <div className="app">
+    <>
+      <AmbientBackground />
+      <div className={`app${collapsed ? " sidebar-collapsed" : ""}`}>
       <Sidebar
         user={user}
         conversations={conversations}
@@ -81,13 +119,22 @@ export default function App() {
         onOpenMcp={() => setShowMcp(true)}
         onOpenSettings={() => setShowSettings(true)}
         onLogout={logout}
+        onCollapse={() => setCollapsed(true)}
       />
+      {collapsed && (
+        <button className="sidebar-open-btn" title="Show sidebar" onClick={() => setCollapsed(false)}>
+          ☰
+        </button>
+      )}
       <main className="main">
         {activeId ? (
           <Chat
             key={activeId}
             conversationId={activeId}
             onFirstMessage={refreshConversations}
+            model={model}
+            models={models}
+            onSelectModel={selectModel}
           />
         ) : (
           <div className="empty-main">
@@ -99,6 +146,7 @@ export default function App() {
       </main>
       {showMcp && <McpPanel onClose={() => setShowMcp(false)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-    </div>
+      </div>
+    </>
   );
 }

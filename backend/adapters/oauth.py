@@ -86,11 +86,14 @@ async def discover(server_url: str) -> dict:
             except Exception:
                 continue
 
-    # 3) Fallback to conventional endpoint paths.
+    # 3) Fallback to conventional endpoint paths. registration_endpoint stays None:
+    # we only claim Dynamic Client Registration when real metadata advertises it,
+    # so we never POST to a fabricated /register (which 404s) or offer a login the
+    # server can't honor.
     return {
         "authorization_endpoint": urljoin(auth_server + "/", "authorize"),
         "token_endpoint": urljoin(auth_server + "/", "token"),
-        "registration_endpoint": urljoin(auth_server + "/", "register"),
+        "registration_endpoint": None,
         "scopes_supported": scopes,
         "resource": resource,
     }

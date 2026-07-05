@@ -10,6 +10,7 @@ import {
   listMcp,
   McpInspect,
   McpServer,
+  startServerOAuth,
   toggleTool,
 } from "../api";
 
@@ -42,6 +43,34 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
       setData(await connectMcp(server.id, token.trim()));
       setToken("");
     } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function login() {
+    setConnecting(true);
+    try {
+      const { authorization_url } = await startServerOAuth(server.id);
+      if (!authorization_url) {
+        setConnecting(false);
+        return;
+      }
+      // Open the provider's login in a new tab; re-inspect once it signals done.
+      const tab = window.open(authorization_url, "_blank");
+      const onMsg = (e: MessageEvent) => {
+        if (e.data === "mcp-oauth-done") finish();
+      };
+      const finish = () => {
+        window.removeEventListener("message", onMsg);
+        clearInterval(poll);
+        setConnecting(false);
+        inspect();
+      };
+      window.addEventListener("message", onMsg);
+      const poll = setInterval(() => {
+        if (!tab || tab.closed) finish();
+      }, 800);
+    } catch {
       setConnecting(false);
     }
   }
@@ -80,10 +109,18 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
       {!loading && data?.needs_auth && (
         <div className="auth-box">
           <div className="auth-msg">🔒 This server requires authentication.</div>
+          {data.supports_oauth && (
+            <div className="auth-row">
+              <button className="primary-btn small" onClick={login} disabled={connecting}>
+                {connecting ? "Connecting…" : "Login"}
+              </button>
+              <span className="dim">Sign in with the provider in a new tab.</span>
+            </div>
+          )}
           <div className="auth-row">
             <input
               type="password"
-              placeholder="Paste access token…"
+              placeholder={data.supports_oauth ? "…or paste an access token" : "Paste access token…"}
               value={token}
               onChange={(e) => setToken(e.target.value)}
             />
