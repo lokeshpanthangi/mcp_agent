@@ -129,6 +129,28 @@ export function toggleTool(id: number, toolName: string, enabled: boolean): Prom
   });
 }
 
+// ── Connectors (OAuth one-click) ─────────
+export interface Connector {
+  key: string;
+  name: string;
+  url: string;
+  transport: string;
+  description: string;
+  connected: boolean;
+  server_id: number | null;
+  auth: string; // "oauth" (popup) or "token" (paste a personal access token)
+}
+export function listConnectors(): Promise<Connector[]> {
+  return req<Connector[]>("/mcp/connectors");
+}
+// OAuth connectors return an authorization_url to open in a popup; token
+// connectors return the server_id of the row now awaiting a pasted token.
+export function connectConnector(
+  key: string,
+): Promise<{ authorization_url?: string; server_id?: number }> {
+  return req(`/mcp/connectors/${key}/connect`, { method: "POST" });
+}
+
 // ── Settings ─────────────────────────────
 export function getSettings(): Promise<Settings> {
   return req<Settings>("/settings");

@@ -1,14 +1,11 @@
-import asyncio
 import json
-from collections.abc import AsyncIterator, Awaitable
-from typing import TypeVar
+from collections.abc import AsyncIterator
 
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
-from api.agent.database import (
-    Conversation,
-    Message,
+from agent.engine import get_agent
+from database.conversations import (
     create_conversation,
     create_message,
     get_conversation,
@@ -16,28 +13,15 @@ from api.agent.database import (
     list_messages,
     set_conversation_title,
 )
-from api.mcp.database import list_mcp_servers_for_user
-from api.mcp.logic import config_entry, disabled_tool_names
-from api.settings.logic import get_effective_settings
-from config import settings
-from core.engine import get_agent
-from database import engine
-
-T = TypeVar("T")
-
-
-async def _with_timeout(awaitable: Awaitable[T], timeout: float) -> T:
-    """Like asyncio.wait_for, but doesn't block on the cancelled task's own
-    cleanup. Some libraries (e.g. MCP session teardown) don't cancel cleanly,
-    and asyncio.wait_for on 3.11+ waits for that cleanup before raising -
-    which can hang far longer than the timeout itself.
-    """
-    task = asyncio.ensure_future(awaitable)
-    _, pending = await asyncio.wait({task}, timeout=timeout)
-    if task in pending:
-        task.cancel()  # fire-and-forget - don't await its cleanup
-        raise TimeoutError
-    return task.result()
+from database.db import engine
+from database.models import Conversation, Message
+from database.settings import get_effective_settings
+from mcp_servers.service import (
+    config_entry,
+    disabled_tool_names,
+    refresh_expired_tokens,
+    user_servers,
+)
 
 
 def start_conversation(session: Session, user_id: int) -> Conversation:
@@ -73,31 +57,23 @@ async def chat_stream(
     if len(history) == 1:
         set_conversation_title(session, conv, message[:60])
 
-    servers = list_mcp_servers_for_user(session, user_id)
+    servers = user_servers(session, user_id)  # includes code-defined servers.json
+    await refresh_expired_tokens(session, servers)  # silently refresh OAuth tokens
     mcp_config = {s.name: config_entry(s) for s in servers}
     disabled = disabled_tool_names(servers)
     eff = get_effective_settings(session, user_id)
-    try:
-        agent = await _with_timeout(
-            get_agent(mcp_config, eff["system_prompt"], eff["api_key"], disabled),
-            settings.TOOL_TIMEOUT_SECONDS,
-        )
-    except TimeoutError as exc:
-        raise HTTPException(status.HTTP_504_GATEWAY_TIMEOUT, "Timed out loading MCP tools") from exc
-    except Exception as exc:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"Failed to load MCP tools: {exc}") from exc
+
+    # Broken/slow servers are skipped inside get_agent, so a single bad server
+    # never fails the whole chat. The system prompt rides along as a system
+    # message (the agent itself is prompt-agnostic and cached across users).
+    agent = await get_agent(mcp_config, eff["api_key"], disabled)
+    messages = [("system", eff["system_prompt"]), *history]
 
     async def stream() -> AsyncIterator[str]:
         answer_parts: list[str] = []
         reasoning_parts: list[str] = []
-        events = agent.astream_events({"messages": history}, version="v2")
         try:
-            while True:
-                try:
-                    ev = await _with_timeout(anext(events), settings.TOOL_TIMEOUT_SECONDS)
-                except StopAsyncIteration:
-                    break
-
+            async for ev in agent.astream_events({"messages": messages}, version="v2"):
                 kind = ev["event"]
                 if kind == "on_chat_model_stream":
                     chunk = ev["data"]["chunk"]
@@ -108,14 +84,12 @@ async def chat_stream(
                     if chunk.content:
                         answer_parts.append(chunk.content)
                         yield _sse("token", {"text": chunk.content})
+                elif ev["name"] == "retrieve_tools":
+                    continue  # internal tool-selection step — not shown to the user
                 elif kind == "on_tool_start":
                     yield _sse("tool_call", {"name": ev["name"], "input": ev["data"].get("input")})
                 elif kind == "on_tool_end":
                     yield _sse("tool_result", {"name": ev["name"], "output": str(ev["data"].get("output"))})
-        except TimeoutError:
-            yield _sse("error", {"message": "Timed out waiting for a response or tool result."})
-            yield _sse("done", {})
-            return
         except Exception as exc:  # noqa: BLE001 - surface any agent/tool failure to the client
             yield _sse("error", {"message": str(exc)})
             yield _sse("done", {})

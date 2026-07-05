@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   attachMcp,
+  connectConnector,
   connectMcp,
+  Connector,
   detachMcp,
   inspectMcp,
+  listConnectors,
   listMcp,
   McpInspect,
   McpServer,
@@ -141,6 +144,8 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
 
 export default function McpPanel({ onClose }: { onClose: () => void }) {
   const [servers, setServers] = useState<McpServer[]>([]);
+  const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [connecting, setConnecting] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -148,7 +153,9 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
 
   async function refresh() {
     try {
-      setServers(await listMcp());
+      const [s, c] = await Promise.all([listMcp(), listConnectors()]);
+      setServers(s);
+      setConnectors(c);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
     }
@@ -157,6 +164,40 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     refresh();
   }, []);
+
+  async function connect(c: Connector) {
+    setConnecting(c.key);
+    setError("");
+    try {
+      const { authorization_url } = await connectConnector(c.key);
+      // Token connectors have no auth URL — a server row was created; refresh so
+      // its card appears and prompts for a personal access token.
+      if (!authorization_url) {
+        setConnecting(null);
+        await refresh();
+        return;
+      }
+      const tab = window.open(authorization_url, "_blank");
+      // When the callback page signals completion, refresh and stop.
+      const onMsg = (e: MessageEvent) => {
+        if (e.data === "mcp-oauth-done") finish();
+      };
+      const finish = () => {
+        window.removeEventListener("message", onMsg);
+        clearInterval(poll);
+        setConnecting(null);
+        refresh();
+      };
+      window.addEventListener("message", onMsg);
+      // Fallback: also poll for the auth tab closing.
+      const poll = setInterval(() => {
+        if (!tab || tab.closed) finish();
+      }, 800);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start OAuth");
+      setConnecting(null);
+    }
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -190,10 +231,30 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="modal-sub">
-          Attach a Model Context Protocol server. Its tools and prompts are shown below — toggle
-          exactly which tools the agent may use.
+          Connect a service in one click, or attach any MCP server by URL. Its tools and prompts
+          are shown below — toggle exactly which tools the agent may use.
         </p>
 
+        <div className="section-label">Connectors</div>
+        <div className="connector-grid">
+          {connectors.map((c) => (
+            <button
+              key={c.key}
+              className={`connector-card ${c.connected ? "connected" : ""}`}
+              disabled={connecting !== null}
+              onClick={() => (c.connected ? undefined : connect(c))}
+              title={c.description}
+            >
+              <span className="connector-name">{c.name}</span>
+              <span className="connector-desc">{c.description}</span>
+              <span className="connector-status">
+                {c.connected ? "✓ Connected" : connecting === c.key ? "Connecting…" : "Connect"}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="section-label">Add by URL</div>
         <form className="mcp-form" onSubmit={add}>
           <input placeholder="Name (e.g. weather)" value={name} onChange={(e) => setName(e.target.value)} />
           <input placeholder="https://server/mcp" value={url} onChange={(e) => setUrl(e.target.value)} />

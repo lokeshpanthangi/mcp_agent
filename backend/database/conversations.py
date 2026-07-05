@@ -1,26 +1,6 @@
-from datetime import datetime, timezone
+from sqlmodel import Session, select
 
-from sqlmodel import Field, Session, SQLModel, select
-
-
-def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-class Conversation(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
-    title: str = "New conversation"
-    created_at: datetime = Field(default_factory=utcnow)
-
-
-class Message(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    conversation_id: int = Field(foreign_key="conversation.id", index=True)
-    role: str
-    content: str
-    reasoning: str | None = None
-    created_at: datetime = Field(default_factory=utcnow)
+from database.models import Conversation, Message
 
 
 def create_conversation(session: Session, user_id: int) -> Conversation:

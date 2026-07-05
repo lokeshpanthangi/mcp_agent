@@ -4,12 +4,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.agent import routes as agent_routes
-from api.auth import routes as auth_routes
-from api.mcp import routes as mcp_routes
-from api.settings import routes as settings_routes
+from api import agent as agent_api
+from api import auth as auth_api
+from api import mcp as mcp_api
+from api import settings as settings_api
 from config import settings
-from database import create_db_and_tables
+from database.db import create_db_and_tables
 
 
 @asynccontextmanager
@@ -26,10 +26,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(auth_routes.router)
-app.include_router(mcp_routes.router)
-app.include_router(agent_routes.router)
-app.include_router(settings_routes.router)
+app.include_router(auth_api.router)
+app.include_router(mcp_api.router)
+app.include_router(agent_api.router)
+app.include_router(settings_api.router)
 
 
 @app.get("/health")

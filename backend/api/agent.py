@@ -3,15 +3,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from api.agent.logic import (
+from agent.chat import (
     chat_stream,
     get_conversation_messages,
     list_conversations,
     start_conversation,
 )
-from api.auth.database import User
-from database import get_session
-from security.auth import get_current_user
+from api.deps import get_current_user
+from database.db import get_session
+from database.models import User
 
 router = APIRouter(tags=["agent"])
 

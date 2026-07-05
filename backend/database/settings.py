@@ -1,8 +1,29 @@
 from sqlmodel import Session
 
-from api.settings.database import get_user_settings, upsert_user_settings
+from agent.prompts import SYSTEM_PROMPT
 from config import settings as cfg
-from prompts import SYSTEM_PROMPT
+from database.models import UserSettings
+
+
+def get_user_settings(session: Session, user_id: int) -> UserSettings | None:
+    return session.get(UserSettings, user_id)
+
+
+def upsert_user_settings(
+    session: Session,
+    user_id: int,
+    system_prompt: str | None,
+    ollama_api_key: str | None,
+) -> UserSettings:
+    row = session.get(UserSettings, user_id)
+    if row is None:
+        row = UserSettings(user_id=user_id)
+    row.system_prompt = system_prompt
+    row.ollama_api_key = ollama_api_key
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return row
 
 
 def get_effective_settings(session: Session, user_id: int) -> dict:

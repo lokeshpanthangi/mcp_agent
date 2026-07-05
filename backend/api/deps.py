@@ -1,17 +1,12 @@
-import secrets
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 
-from api.auth.database import User, get_user_by_token
-from database import get_session
+from database.db import get_session
+from database.models import User
+from database.users import get_user_by_token
 
 bearer_scheme = HTTPBearer()
-
-
-def generate_token() -> str:
-    return secrets.token_urlsafe(32)
 
 
 def get_current_user(

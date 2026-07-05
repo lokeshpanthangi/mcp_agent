@@ -7,4 +7,4 @@ langchain
 langchain-ollama
 langchain-mcp-adapters
 langgraph
-deepagents
+langgraph-bigtool

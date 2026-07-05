@@ -350,6 +350,8 @@ textarea {
   color: var(--text-dim);
 }
 .welcome-mark {
+  position: relative;
+  display: inline-block;
   font-size: 40px;
   color: var(--accent);
   filter: drop-shadow(0 0 16px var(--accent-glow));
@@ -798,6 +800,136 @@ textarea {
   font-size: 13px;
   text-align: center;
   padding: 16px;
+}
+
+/* ── Animations ─────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  60% {
+    transform: scale(1.01) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* New chat: the welcome screen animates in, the mark gently floats. */
+.welcome {
+  animation: popIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.welcome-mark {
+  animation: floaty 3.5s ease-in-out infinite;
+}
+.welcome-mark::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  animation: glowPulse 3.5s ease-in-out infinite;
+  z-index: -1;
+}
+
+/* Each message (incl. the first) slides up as it appears. */
+.msg {
+  animation: fadeInUp 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome,
+  .welcome-mark,
+  .welcome-mark::after,
+  .msg {
+    animation: none;
+  }
+}
+
+/* ── Connectors grid ────────────────────── */
+.connector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.connector-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 12px 13px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s, background 0.15s;
+}
+.connector-card:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  background: var(--bg-elev);
+}
+.connector-card:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.connector-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+.connector-desc {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  line-height: 1.35;
+  flex: 1;
+}
+.connector-status {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.connector-card.connected .connector-status {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
 }
 
 /* ── MCP server cards ───────────────────── */

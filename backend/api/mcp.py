@@ -1,20 +1,51 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import HTMLResponse
 from pydantic import AnyHttpUrl, BaseModel
 from sqlmodel import Session
 
-from api.auth.database import User
-from api.mcp.logic import (
+from api.deps import get_current_user
+from database.db import get_session
+from database.models import User
+from mcp_servers.service import (
     attach_mcp_server,
+    connect_connector,
     connect_mcp_server,
     detach_mcp_server,
+    handle_oauth_callback,
     inspect_mcp_server,
+    list_connectors,
     list_mcp_servers,
     toggle_tool,
 )
-from database import get_session
-from security.auth import get_current_user
 
 router = APIRouter(prefix="/mcp", tags=["mcp"])
+
+
+class ConnectorResponse(BaseModel):
+    key: str
+    name: str
+    url: str
+    transport: str
+    description: str
+    connected: bool
+    server_id: int | None
+    auth: str = "oauth"
+
+
+class ConnectorAuthResponse(BaseModel):
+    # OAuth connectors return an authorization_url to open in a popup; token
+    # connectors return the server_id of the row awaiting a pasted token.
+    authorization_url: str | None = None
+    server_id: int | None = None
+
+
+def _popup_close_html(message: str) -> str:
+    return f"""<!doctype html><html><head><meta charset="utf-8"><title>{message}</title>
+<style>body{{font-family:system-ui;background:#0f1015;color:#e7e7ea;display:grid;
+place-items:center;height:100vh;margin:0}}.card{{text-align:center}}</style></head>
+<body><div class="card"><h2>{message}</h2><p>You can close this window.</p></div>
+<script>try{{window.opener&&window.opener.postMessage('mcp-oauth-done','*')}}catch(e){{}}
+setTimeout(()=>window.close(),800);</script></body></html>"""
 
 
 class McpServerCreate(BaseModel):
@@ -122,3 +153,42 @@ def toggle_tool_route(
     session: Session = Depends(get_session),
 ) -> None:
     toggle_tool(session, user.id, server_id, tool_name, body.enabled)
+
+
+# ── OAuth connectors ─────────────────────────────────────────────
+@router.get("/connectors", response_model=list[ConnectorResponse])
+def connectors_route(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    return list_connectors(session, user.id)
+
+
+@router.post("/connectors/{connector_key}/connect", response_model=ConnectorAuthResponse)
+async def connector_connect_route(
+    connector_key: str,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> ConnectorAuthResponse:
+    result = await connect_connector(session, user.id, connector_key)
+    return ConnectorAuthResponse(**result)
+
+
+# The provider redirects the browser here — a top-level navigation with no
+# bearer token. The user is identified by the (secret) OAuth state, not auth.
+@router.get("/oauth/callback", response_class=HTMLResponse)
+async def oauth_callback_route(
+    session: Session = Depends(get_session),
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+) -> HTMLResponse:
+    if error:
+        return HTMLResponse(_popup_close_html(f"Authorization failed: {error}"))
+    if not code or not state:
+        return HTMLResponse(_popup_close_html("Missing authorization code"))
+    try:
+        name = await handle_oauth_callback(session, state, code)
+        return HTMLResponse(_popup_close_html(f"Connected to {name} ✓"))
+    except Exception as exc:  # noqa: BLE001 - always render a closeable page
+        return HTMLResponse(_popup_close_html(f"Could not connect: {exc}"))

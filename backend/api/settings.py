@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from api.auth.database import User
-from api.settings.logic import get_settings_for_display, save_settings
-from database import get_session
-from security.auth import get_current_user
+from api.deps import get_current_user
+from database.db import get_session
+from database.models import User
+from database.settings import get_settings_for_display, save_settings
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
