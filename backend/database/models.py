@@ -78,3 +78,16 @@ class UserSettings(SQLModel, table=True):
     system_prompt: str | None = None
     ollama_api_key: str | None = None
     model: str | None = None  # chosen Ollama model (falls back to the .env default)
+
+
+class OllamaModel(SQLModel, table=True):
+    """Catalog of models synced from the Ollama API (/api/tags)."""
+
+    name: str = Field(primary_key=True)
+    reasoning: bool = False
+    family: str | None = None
+    parameter_size: str | None = None
+    quantization_level: str | None = None
+    size: int | None = None
+    modified_at: str | None = None
+    synced_at: datetime = Field(default_factory=utcnow)

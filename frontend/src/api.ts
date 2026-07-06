@@ -25,12 +25,41 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...(options.headers ?? {}),
     },
   });
+  if (res.status === 401) {
+    clearToken();
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`${res.status}: ${body}`);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("Request timed out")), ms);
+    promise
+      .then((value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        window.clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
+/** Returns the current user, or null if unauthenticated / expired / unreachable. */
+export async function restoreSession(timeoutMs = 8000): Promise<User | null> {
+  if (!getToken()) return null;
+  try {
+    return await withTimeout(me(), timeoutMs);
+  } catch {
+    clearToken();
+    return null;
+  }
 }
 
 // ── Types ────────────────────────────────

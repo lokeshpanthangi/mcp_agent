@@ -7,6 +7,7 @@ from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_ollama import ChatOllama
 
+from adapters.ollama import effective_base_url
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def make_model(api_key: str | None, model: str | None = None) -> ChatOllama:
         client_kwargs["headers"] = {"Authorization": f"Bearer {api_key}"}
     return ChatOllama(
         model=model or settings.OLLAMA_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
+        base_url=effective_base_url(api_key),
         num_predict=settings.MAX_TOKENS,
         reasoning=True,  # reasoning models (e.g. gpt-oss) stream their thinking
         client_kwargs=client_kwargs,

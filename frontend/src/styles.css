@@ -42,9 +42,19 @@ textarea {
   font-family: inherit;
 }
 
+/* ── Auth shell (login + boot) ──────────── */
+.auth-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  width: 100%;
+}
+
 /* ── Boot / loading ─────────────────────── */
 .boot {
-  height: 100%;
+  position: relative;
+  z-index: 2;
+  min-height: 100%;
   display: grid;
   place-items: center;
   font-size: 40px;
@@ -65,10 +75,13 @@ textarea {
 
 /* ── Login ──────────────────────────────── */
 .login-screen {
-  height: 100%;
+  position: relative;
+  z-index: 2;
+  min-height: 100%;
+  width: 100%;
   display: grid;
   place-items: center;
-  background: radial-gradient(1200px 600px at 50% -10%, #161a28 0%, var(--bg) 60%);
+  padding: 24px;
 }
 .login-card {
   width: 360px;

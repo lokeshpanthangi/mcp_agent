@@ -12,9 +12,23 @@ from config import settings
 from database.db import create_db_and_tables
 
 
+async def _sync_ollama_models_on_startup() -> None:
+    from sqlmodel import Session
+
+    from adapters.ollama import sync_models_to_db
+    from database.db import engine
+
+    with Session(engine) as session:
+        try:
+            await sync_models_to_db(session, settings.OLLAMA_API_KEY)
+        except Exception:
+            pass  # Ollama may be offline at boot; UI can refresh later
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     create_db_and_tables()
+    await _sync_ollama_models_on_startup()
     yield
 
 

@@ -4,11 +4,11 @@ import {
   Conversation,
   createConversation,
   getSettings,
-  getToken,
   listConversations,
   listModels,
   me,
   ModelInfo,
+  restoreSession,
   setModel as saveModel,
   User,
 } from "./api";
@@ -30,7 +30,6 @@ export default function App() {
   const [model, setModelState] = useState("");
   const [models, setModels] = useState<ModelInfo[]>([]);
 
-  // Load the model list + current selection once the user is known.
   useEffect(() => {
     if (!user) return;
     getSettings().then((s) => setModelState(s.model)).catch(() => {});
@@ -38,36 +37,42 @@ export default function App() {
   }, [user]);
 
   async function selectModel(name: string) {
-    setModelState(name); // optimistic
+    setModelState(name);
     try {
       await saveModel(name);
     } catch {
-      /* keep the optimistic value; next load will reconcile */
+      /* optimistic value kept until next reload */
     }
   }
 
   const refreshConversations = useCallback(async () => {
     const list = await listConversations();
-    // newest first
     list.sort((a, b) => b.id - a.id);
     setConversations(list);
     return list;
   }, []);
 
-  // On load, if we have a token, verify it and load conversations.
+  // Restore session on load — never block the login screen on conversation loading.
   useEffect(() => {
-    if (!getToken()) {
-      setReady(true);
-      return;
-    }
-    me()
-      .then(async (u) => {
+    let cancelled = false;
+
+    restoreSession()
+      .then((u) => {
+        if (cancelled || !u) return;
         setUser(u);
-        const list = await refreshConversations();
-        if (list.length > 0) setActiveId(list[0].id);
+        refreshConversations()
+          .then((list) => {
+            if (!cancelled && list.length > 0) setActiveId(list[0].id);
+          })
+          .catch(() => {});
       })
-      .catch(() => clearToken())
-      .finally(() => setReady(true));
+      .finally(() => {
+        if (!cancelled) setReady(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [refreshConversations]);
 
   async function afterLogin() {
@@ -91,61 +96,64 @@ export default function App() {
     setActiveId(null);
   }
 
-  if (!ready)
+  if (!ready) {
     return (
-      <>
+      <div className="auth-shell">
         <AmbientBackground />
         <div className="boot">✦</div>
-      </>
+      </div>
     );
-  if (!user)
+  }
+
+  if (!user) {
     return (
-      <>
+      <div className="auth-shell">
         <AmbientBackground />
         <Login onLoggedIn={afterLogin} />
-      </>
+      </div>
     );
+  }
 
   return (
     <>
       <AmbientBackground />
       <div className={`app${collapsed ? " sidebar-collapsed" : ""}`}>
-      <Sidebar
-        user={user}
-        conversations={conversations}
-        activeId={activeId}
-        onSelect={setActiveId}
-        onNewChat={newChat}
-        onOpenMcp={() => setShowMcp(true)}
-        onOpenSettings={() => setShowSettings(true)}
-        onLogout={logout}
-        onCollapse={() => setCollapsed(true)}
-      />
-      {collapsed && (
-        <button className="sidebar-open-btn" title="Show sidebar" onClick={() => setCollapsed(false)}>
-          ☰
-        </button>
-      )}
-      <main className="main">
-        {activeId ? (
-          <Chat
-            key={activeId}
-            conversationId={activeId}
-            onFirstMessage={refreshConversations}
-            model={model}
-            models={models}
-            onSelectModel={selectModel}
-          />
-        ) : (
-          <div className="empty-main">
-            <button className="new-chat big" onClick={newChat}>
-              ＋ Start a new chat
-            </button>
-          </div>
+        <Sidebar
+          user={user}
+          conversations={conversations}
+          activeId={activeId}
+          onSelect={setActiveId}
+          onNewChat={newChat}
+          onOpenMcp={() => setShowMcp(true)}
+          onOpenSettings={() => setShowSettings(true)}
+          onLogout={logout}
+          onCollapse={() => setCollapsed(true)}
+        />
+        {collapsed && (
+          <button className="sidebar-open-btn" title="Show sidebar" onClick={() => setCollapsed(false)}>
+            ☰
+          </button>
         )}
-      </main>
-      {showMcp && <McpPanel onClose={() => setShowMcp(false)} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+        <main className="main">
+          {activeId ? (
+            <Chat
+              key={activeId}
+              conversationId={activeId}
+              onFirstMessage={refreshConversations}
+              model={model}
+              models={models}
+              onSelectModel={selectModel}
+            />
+          ) : (
+            <div className="empty-main">
+              <button className="new-chat big" onClick={newChat}>
+                ＋ Start a new chat
+              </button>
+            </div>
+          )}
+        </main>
+        {showMcp && <McpPanel onClose={() => setShowMcp(false)} />}
+        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     </>
   );
