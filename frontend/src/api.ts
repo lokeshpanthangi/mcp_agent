@@ -97,6 +97,20 @@ export interface McpToolInfo {
 export interface McpPromptInfo {
   name: string;
   description: string;
+  arguments?: McpPromptArgument[];
+}
+export interface McpPromptArgument {
+  name: string;
+  description: string;
+  required: boolean;
+}
+export interface McpCommand {
+  name: string;
+  server: string;
+  description: string;
+  slash: string;
+  usage: string;
+  arguments: McpPromptArgument[];
 }
 export interface McpInspect {
   id: number;
@@ -138,6 +152,9 @@ export function getMessages(conversationId: number): Promise<ChatMessage[]> {
 export function listMcp(): Promise<McpServer[]> {
   return req<McpServer[]>("/mcp");
 }
+export function listMcpCommands(): Promise<McpCommand[]> {
+  return req<McpCommand[]>("/mcp/commands");
+}
 export function attachMcp(name: string, url: string): Promise<McpServer> {
   return req<McpServer>("/mcp", { method: "POST", body: JSON.stringify({ name, url }) });
 }
@@ -171,12 +188,20 @@ export interface Connector {
   url: string;
   transport: string;
   description: string;
+  category: string;
   connected: boolean;
   server_id: number | null;
-  auth: string; // "oauth" (popup) or "token" (paste a personal access token)
+  auth: string; // "oauth" | "token" | "open"
 }
-export function listConnectors(): Promise<Connector[]> {
-  return req<Connector[]>("/mcp/connectors");
+export interface ConnectorsPage {
+  items: Connector[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}
+export function listConnectors(page = 1, limit = 12): Promise<ConnectorsPage> {
+  return req<ConnectorsPage>(`/mcp/connectors?page=${page}&limit=${limit}`);
 }
 // OAuth connectors return an authorization_url to open in a popup; token
 // connectors return the server_id of the row now awaiting a pasted token.
@@ -213,6 +238,7 @@ export interface ChatHandlers {
   onToken?: (text: string) => void;
   onToolCall?: (name: string, input: unknown) => void;
   onToolResult?: (name: string, output: string) => void;
+  onMcpPrompt?: (name: string, server: string) => void;
   onError?: (message: string) => void;
   onDone?: () => void;
 }
@@ -269,6 +295,9 @@ export async function chat(
           break;
         case "tool_result":
           handlers.onToolResult?.(payload.name, payload.output);
+          break;
+        case "mcp_prompt":
+          handlers.onMcpPrompt?.(payload.name, payload.server);
           break;
         case "error":
           handlers.onError?.(payload.message);

@@ -21,7 +21,13 @@ def _add_missing_columns() -> None:
     """Add nullable columns introduced after a table already existed (SQLite)."""
     from sqlalchemy import text
 
-    needed = {"usersettings": [("model", "VARCHAR")]}
+    needed = {
+        "usersettings": [("model", "VARCHAR")],
+        "mcpserver": [
+            ("tools_snapshot_json", "TEXT"),
+            ("prompts_snapshot_json", "TEXT"),
+        ],
+    }
     with engine.begin() as conn:
         for table, columns in needed.items():
             existing = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))}

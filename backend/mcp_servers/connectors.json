@@ -1,0 +1,920 @@
+[
+  {
+    "key": "youtube-transcript",
+    "name": "YouTube Transcript",
+    "url": "https://youtube-transcript.ai/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Extract and analyze YouTube video transcripts.",
+    "category": "Media"
+  },
+  {
+    "key": "excalidraw",
+    "name": "Excalidraw",
+    "url": "https://api.excalidraw.com/api/v1/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Generate hand-drawn diagrams from natural language.",
+    "category": "Design"
+  },
+  {
+    "key": "github",
+    "name": "GitHub",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Repositories, issues, pull requests, code search.",
+    "category": "Development"
+  },
+  {
+    "key": "notion",
+    "name": "Notion",
+    "url": "https://mcp.notion.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Search, read, and update your Notion workspace.",
+    "category": "Productivity"
+  },
+  {
+    "key": "linear",
+    "name": "Linear",
+    "url": "https://mcp.linear.app/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Issues, projects, and cycles in Linear.",
+    "category": "Project Management"
+  },
+  {
+    "key": "supabase",
+    "name": "Supabase",
+    "url": "https://mcp.supabase.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Postgres database, auth, storage, and realtime.",
+    "category": "Database"
+  },
+  {
+    "key": "stripe",
+    "name": "Stripe",
+    "url": "https://mcp.stripe.com",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Payments, customers, subscriptions, and invoices.",
+    "category": "Payments"
+  },
+  {
+    "key": "sentry",
+    "name": "Sentry",
+    "url": "https://mcp.sentry.dev/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Errors, releases, and performance monitoring.",
+    "category": "Development"
+  },
+  {
+    "key": "cloudflare",
+    "name": "Cloudflare",
+    "url": "https://mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Workers, KV, R2, DNS, and Cloudflare API.",
+    "category": "Cloud"
+  },
+  {
+    "key": "figma",
+    "name": "Figma",
+    "url": "https://mcp.figma.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Design files, components, and FigJam boards.",
+    "category": "Design"
+  },
+  {
+    "key": "slack",
+    "name": "Slack",
+    "url": "https://mcp.slack.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Channels, messages, and workspace search.",
+    "category": "Communication"
+  },
+  {
+    "key": "vercel",
+    "name": "Vercel",
+    "url": "https://mcp.vercel.com/",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Deployments, logs, and project environments.",
+    "category": "Development"
+  },
+  {
+    "key": "intercom",
+    "name": "Intercom",
+    "url": "https://mcp.intercom.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Customer conversations, contacts, and help center.",
+    "category": "Support"
+  },
+  {
+    "key": "asana",
+    "name": "Asana",
+    "url": "https://mcp.asana.com/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Tasks, projects, and workspaces in Asana.",
+    "category": "Project Management"
+  },
+  {
+    "key": "atlassian",
+    "name": "Atlassian",
+    "url": "https://mcp.atlassian.com/v1/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Jira issues and Confluence pages.",
+    "category": "Project Management"
+  },
+  {
+    "key": "paypal",
+    "name": "PayPal",
+    "url": "https://mcp.paypal.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Invoices, orders, and transactions.",
+    "category": "Payments"
+  },
+  {
+    "key": "neon",
+    "name": "Neon",
+    "url": "https://mcp.neon.tech/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Serverless Postgres branches and databases.",
+    "category": "Database"
+  },
+  {
+    "key": "netlify",
+    "name": "Netlify",
+    "url": "https://netlify-mcp.netlify.app/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Sites, deploys, and serverless functions.",
+    "category": "Development"
+  },
+  {
+    "key": "airtable",
+    "name": "Airtable",
+    "url": "https://mcp.airtable.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Bases, tables, and records in Airtable.",
+    "category": "Database"
+  },
+  {
+    "key": "webflow",
+    "name": "Webflow",
+    "url": "https://mcp.webflow.com/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "CMS collections, pages, and site content.",
+    "category": "CMS"
+  },
+  {
+    "key": "monday-com",
+    "name": "monday.com",
+    "url": "https://mcp.monday.com/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Boards, items, and workflows.",
+    "category": "Project Management"
+  },
+  {
+    "key": "box",
+    "name": "Box",
+    "url": "https://mcp.box.com",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Documents and file management in Box.",
+    "category": "Documents"
+  },
+  {
+    "key": "canva",
+    "name": "Canva",
+    "url": "https://mcp.canva.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Designs, templates, and brand assets.",
+    "category": "Design"
+  },
+  {
+    "key": "zapier",
+    "name": "Zapier",
+    "url": "https://mcp.zapier.com/api/mcp/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Automate workflows across 8000+ apps.",
+    "category": "Automation"
+  },
+  {
+    "key": "apify",
+    "name": "Apify",
+    "url": "https://mcp.apify.com",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Web scraping and automation actors.",
+    "category": "Web"
+  },
+  {
+    "key": "exa-search",
+    "name": "Exa Search",
+    "url": "https://mcp.exa.ai/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Neural web search for AI agents.",
+    "category": "Search"
+  },
+  {
+    "key": "deepwiki",
+    "name": "DeepWiki",
+    "url": "https://mcp.deepwiki.com/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Search and understand any GitHub repository.",
+    "category": "Development"
+  },
+  {
+    "key": "hugging-face",
+    "name": "Hugging Face",
+    "url": "https://hf.co/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Models, datasets, and Spaces on Hugging Face.",
+    "category": "AI"
+  },
+  {
+    "key": "semgrep",
+    "name": "Semgrep",
+    "url": "https://mcp.semgrep.ai/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Static analysis and security scanning.",
+    "category": "Security"
+  },
+  {
+    "key": "context7",
+    "name": "Context7",
+    "url": "https://mcp.context7.com/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Up-to-date library documentation for coding agents.",
+    "category": "Development"
+  },
+  {
+    "key": "firecrawl",
+    "name": "Firecrawl",
+    "url": "https://mcp.firecrawl.dev/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Web scraping and clean markdown extraction.",
+    "category": "Web"
+  },
+  {
+    "key": "cloudflare-docs",
+    "name": "Cloudflare Docs",
+    "url": "https://docs.mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Search Cloudflare product documentation.",
+    "category": "Documentation"
+  },
+  {
+    "key": "cloudflare-workers-bindings",
+    "name": "Cloudflare Workers Bindings",
+    "url": "https://bindings.mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Build Workers with storage, AI, and compute.",
+    "category": "Cloud"
+  },
+  {
+    "key": "cloudflare-observability",
+    "name": "Cloudflare Observability",
+    "url": "https://observability.mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Debug Workers with logs and analytics.",
+    "category": "Cloud"
+  },
+  {
+    "key": "cloudflare-radar",
+    "name": "Cloudflare Radar",
+    "url": "https://radar.mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Internet traffic insights and URL scans.",
+    "category": "Cloud"
+  },
+  {
+    "key": "cloudflare-browser",
+    "name": "Cloudflare Browser",
+    "url": "https://browser.mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Render pages and capture screenshots.",
+    "category": "Cloud"
+  },
+  {
+    "key": "cloudflare-ai-gateway",
+    "name": "Cloudflare AI Gateway",
+    "url": "https://ai-gateway.mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Search AI Gateway logs and prompts.",
+    "category": "Cloud"
+  },
+  {
+    "key": "cloudflare-graphql",
+    "name": "Cloudflare GraphQL",
+    "url": "https://graphql.mcp.cloudflare.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Query Cloudflare analytics via GraphQL.",
+    "category": "Cloud"
+  },
+  {
+    "key": "aws-knowledge",
+    "name": "AWS Knowledge",
+    "url": "https://knowledge-mcp.global.api.aws",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Search AWS documentation and best practices.",
+    "category": "Documentation"
+  },
+  {
+    "key": "prisma-postgres",
+    "name": "Prisma Postgres",
+    "url": "https://mcp.prisma.io/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Manage Prisma Postgres databases.",
+    "category": "Database"
+  },
+  {
+    "key": "stack-overflow",
+    "name": "Stack Overflow",
+    "url": "https://mcp.stackoverflow.com",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Search questions, answers, and tags.",
+    "category": "Development"
+  },
+  {
+    "key": "buildkite",
+    "name": "Buildkite",
+    "url": "https://mcp.buildkite.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Pipelines, builds, and CI/CD.",
+    "category": "Development"
+  },
+  {
+    "key": "jam",
+    "name": "Jam",
+    "url": "https://mcp.jam.dev/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Bug reports with session replay context.",
+    "category": "Development"
+  },
+  {
+    "key": "attio",
+    "name": "Attio",
+    "url": "https://mcp.attio.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "CRM records, lists, and workflows.",
+    "category": "CRM"
+  },
+  {
+    "key": "close-crm",
+    "name": "Close CRM",
+    "url": "https://mcp.close.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Leads, opportunities, and sales pipeline.",
+    "category": "CRM"
+  },
+  {
+    "key": "plaid",
+    "name": "Plaid",
+    "url": "https://api.dashboard.plaid.com/mcp/sse",
+    "transport": "sse",
+    "auth": "token",
+    "description": "Banking and financial account data.",
+    "category": "Payments"
+  },
+  {
+    "key": "square",
+    "name": "Square",
+    "url": "https://mcp.squareup.com/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Payments, orders, and catalog.",
+    "category": "Payments"
+  },
+  {
+    "key": "ramp",
+    "name": "Ramp",
+    "url": "https://ramp-mcp-remote.ramp.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Corporate cards and expense management.",
+    "category": "Payments"
+  },
+  {
+    "key": "mercado-libre",
+    "name": "Mercado Libre",
+    "url": "https://mcp.mercadolibre.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "E-commerce listings and orders.",
+    "category": "E-Commerce"
+  },
+  {
+    "key": "mercado-pago",
+    "name": "Mercado Pago",
+    "url": "https://mcp.mercadopago.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Payment processing in Latin America.",
+    "category": "Payments"
+  },
+  {
+    "key": "cloudinary",
+    "name": "Cloudinary",
+    "url": "https://asset-management.mcp.cloudinary.com/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Media asset management and transforms.",
+    "category": "Media"
+  },
+  {
+    "key": "wix",
+    "name": "Wix",
+    "url": "https://mcp.wix.com/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Wix sites, CMS, and e-commerce.",
+    "category": "CMS"
+  },
+  {
+    "key": "egnyte",
+    "name": "Egnyte",
+    "url": "https://mcp-server.egnyte.com/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Enterprise file sharing and governance.",
+    "category": "Documents"
+  },
+  {
+    "key": "fireflies",
+    "name": "Fireflies",
+    "url": "https://api.fireflies.ai/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Meeting transcripts and summaries.",
+    "category": "Productivity"
+  },
+  {
+    "key": "waystation",
+    "name": "WayStation",
+    "url": "https://waystation.ai/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Connect productivity tools in one place.",
+    "category": "Productivity"
+  },
+  {
+    "key": "simplescraper",
+    "name": "Simplescraper",
+    "url": "https://mcp.simplescraper.io/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "No-code web scraping workflows.",
+    "category": "Web"
+  },
+  {
+    "key": "parallel-search",
+    "name": "Parallel Search",
+    "url": "https://search-mcp.parallel.ai/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "AI-powered web search.",
+    "category": "Search"
+  },
+  {
+    "key": "parallel-task",
+    "name": "Parallel Task",
+    "url": "https://task-mcp.parallel.ai/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Deep web research tasks.",
+    "category": "Search"
+  },
+  {
+    "key": "searchapi",
+    "name": "SearchAPI",
+    "url": "https://www.searchapi.io/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Google, Bing, and shopping search APIs.",
+    "category": "Search"
+  },
+  {
+    "key": "needle",
+    "name": "Needle",
+    "url": "https://mcp.needle-ai.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "RAG search over your documents.",
+    "category": "AI"
+  },
+  {
+    "key": "onecontext",
+    "name": "OneContext",
+    "url": "https://rag-mcp-2.whatsmcp.workers.dev/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "RAG over your knowledge base.",
+    "category": "AI"
+  },
+  {
+    "key": "thoughtspot",
+    "name": "ThoughtSpot",
+    "url": "https://agent.thoughtspot.app/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Analytics and business intelligence.",
+    "category": "Analytics"
+  },
+  {
+    "key": "morningstar",
+    "name": "Morningstar",
+    "url": "https://mcp.morningstar.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Financial data and market research.",
+    "category": "Finance"
+  },
+  {
+    "key": "google-bigquery",
+    "name": "Google BigQuery",
+    "url": "https://bigquery.googleapis.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Query and manage BigQuery datasets.",
+    "category": "Analytics"
+  },
+  {
+    "key": "google-maps",
+    "name": "Google Maps",
+    "url": "https://mapstools.googleapis.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Places, directions, and geocoding.",
+    "category": "Maps"
+  },
+  {
+    "key": "google-compute-engine",
+    "name": "Google Compute Engine",
+    "url": "https://compute.googleapis.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Manage GCE virtual machines.",
+    "category": "Cloud"
+  },
+  {
+    "key": "google-gke",
+    "name": "Google GKE",
+    "url": "https://container.googleapis.com/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Kubernetes clusters on Google Cloud.",
+    "category": "Cloud"
+  },
+  {
+    "key": "globalping",
+    "name": "Globalping",
+    "url": "https://mcp.globalping.dev/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Network diagnostics from global probes.",
+    "category": "Development"
+  },
+  {
+    "key": "instant-db",
+    "name": "Instant DB",
+    "url": "https://mcp.instantdb.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Real-time database for apps.",
+    "category": "Database"
+  },
+  {
+    "key": "port-io",
+    "name": "Port IO",
+    "url": "https://mcp.port.io/v1",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Internal developer portal and catalog.",
+    "category": "Development"
+  },
+  {
+    "key": "cortex",
+    "name": "Cortex",
+    "url": "https://mcp.cortex.io/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Service catalog and scorecards.",
+    "category": "Development"
+  },
+  {
+    "key": "zenable",
+    "name": "Zenable",
+    "url": "https://mcp.zenable.app/",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Secure AI guardrails and policies.",
+    "category": "Security"
+  },
+  {
+    "key": "stytch",
+    "name": "Stytch",
+    "url": "https://mcp.stytch.dev/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Authentication and user management.",
+    "category": "Security"
+  },
+  {
+    "key": "openzeppelin-cairo",
+    "name": "OpenZeppelin Cairo",
+    "url": "https://mcp.openzeppelin.com/contracts/cairo/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Cairo smart contract templates.",
+    "category": "Blockchain"
+  },
+  {
+    "key": "openzeppelin-solidity",
+    "name": "OpenZeppelin Solidity",
+    "url": "https://mcp.openzeppelin.com/contracts/solidity/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Solidity smart contract templates.",
+    "category": "Blockchain"
+  },
+  {
+    "key": "openzeppelin-stellar",
+    "name": "OpenZeppelin Stellar",
+    "url": "https://mcp.openzeppelin.com/contracts/stellar/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Stellar smart contract templates.",
+    "category": "Blockchain"
+  },
+  {
+    "key": "astro-docs",
+    "name": "Astro Docs",
+    "url": "https://mcp.docs.astro.build/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Astro framework documentation search.",
+    "category": "Documentation"
+  },
+  {
+    "key": "javadocs",
+    "name": "Javadocs",
+    "url": "https://www.javadocs.dev/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Search Java library documentation.",
+    "category": "Documentation"
+  },
+  {
+    "key": "gitmcp",
+    "name": "GitMCP",
+    "url": "https://gitmcp.io/docs",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Docs and code search for any GitHub repo.",
+    "category": "Development"
+  },
+  {
+    "key": "wolfram",
+    "name": "Wolfram",
+    "url": "https://agenttools.wolfram.com/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Computational knowledge and math.",
+    "category": "Productivity"
+  },
+  {
+    "key": "manifold",
+    "name": "Manifold",
+    "url": "https://api.manifold.markets/v0/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Prediction markets and forecasting.",
+    "category": "Finance"
+  },
+  {
+    "key": "livescore",
+    "name": "LiveScore",
+    "url": "https://livescoremcp.com/sse",
+    "transport": "sse",
+    "auth": "open",
+    "description": "Live sports scores and fixtures.",
+    "category": "Sports"
+  },
+  {
+    "key": "find-a-domain",
+    "name": "Find-A-Domain",
+    "url": "https://api.findadomain.dev/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Domain name search and availability.",
+    "category": "Productivity"
+  },
+  {
+    "key": "peek",
+    "name": "Peek",
+    "url": "https://mcp.peek.com",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Activity and experience booking.",
+    "category": "Travel"
+  },
+  {
+    "key": "ferryhopper",
+    "name": "Ferryhopper",
+    "url": "https://mcp.ferryhopper.com/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Ferry routes, schedules, and tickets.",
+    "category": "Travel"
+  },
+  {
+    "key": "subwayinfo-nyc",
+    "name": "SubwayInfo NYC",
+    "url": "https://subwayinfo.nyc/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Real-time NYC subway status.",
+    "category": "Transit"
+  },
+  {
+    "key": "telnyx",
+    "name": "Telnyx",
+    "url": "https://api.telnyx.com/v2/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "SMS, voice, and communications APIs.",
+    "category": "Communication"
+  },
+  {
+    "key": "short-io",
+    "name": "Short.io",
+    "url": "https://ai-assistant.short.io/mcp",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Link shortening and analytics.",
+    "category": "Marketing"
+  },
+  {
+    "key": "meta-ads",
+    "name": "Meta Ads",
+    "url": "https://mcp.pipeboard.co/meta-ads-mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Facebook and Instagram ad campaigns.",
+    "category": "Marketing"
+  },
+  {
+    "key": "vibemarketing",
+    "name": "VibeMarketing",
+    "url": "https://vibemarketing.ninja/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Social media content and scheduling.",
+    "category": "Marketing"
+  },
+  {
+    "key": "octagon",
+    "name": "Octagon",
+    "url": "https://mcp.octagonagents.com/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Market intelligence and research.",
+    "category": "Finance"
+  },
+  {
+    "key": "scorecard",
+    "name": "Scorecard",
+    "url": "https://scorecard-mcp.dare-d5b.workers.dev/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "Evaluate and score AI outputs.",
+    "category": "AI"
+  },
+  {
+    "key": "listenetic",
+    "name": "Listenetic",
+    "url": "https://mcp.listenetic.com/v1/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Voice notes and transcription.",
+    "category": "Productivity"
+  },
+  {
+    "key": "carbon-voice",
+    "name": "Carbon Voice",
+    "url": "https://mcp.carbonvoice.app",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Async voice messaging for teams.",
+    "category": "Communication"
+  },
+  {
+    "key": "indeed",
+    "name": "Indeed",
+    "url": "https://mcp.indeed.com/claude/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Job search and listings.",
+    "category": "HR"
+  },
+  {
+    "key": "invideo",
+    "name": "Invideo",
+    "url": "https://mcp.invideo.io/sse",
+    "transport": "sse",
+    "auth": "oauth",
+    "description": "AI video creation and editing.",
+    "category": "Media"
+  },
+  {
+    "key": "audioscrape",
+    "name": "Audioscrape",
+    "url": "https://mcp.audioscrape.com",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Search and analyze audio content.",
+    "category": "Media"
+  },
+  {
+    "key": "ean-search",
+    "name": "EAN Search",
+    "url": "https://www.ean-search.org/mcp",
+    "transport": "streamable_http",
+    "auth": "oauth",
+    "description": "Product barcode and EAN lookup.",
+    "category": "Data"
+  },
+  {
+    "key": "polar-signals",
+    "name": "Polar Signals",
+    "url": "https://api.polarsignals.com/api/mcp/",
+    "transport": "streamable_http",
+    "auth": "token",
+    "description": "Continuous profiling for performance.",
+    "category": "Development"
+  },
+  {
+    "key": "dodo-payments",
+    "name": "Dodo Payments",
+    "url": "https://mcp.dodopayments.com/sse",
+    "transport": "sse",
+    "auth": "token",
+    "description": "Payment processing for SaaS.",
+    "category": "Payments"
+  },
+  {
+    "key": "webzum",
+    "name": "WebZum",
+    "url": "https://webzum.com/api/mcp",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "AI website builder and hosting.",
+    "category": "Web"
+  },
+  {
+    "key": "remote-mcp-directory",
+    "name": "Remote MCP Directory",
+    "url": "https://mcp.remote-mcp.com",
+    "transport": "streamable_http",
+    "auth": "open",
+    "description": "Browse the remote MCP server catalog.",
+    "category": "Development"
+  }
+]

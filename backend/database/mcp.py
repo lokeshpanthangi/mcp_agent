@@ -25,7 +25,12 @@ def create_mcp_server(
 
 
 def list_mcp_servers_for_user(session: Session, user_id: int) -> list[McpServer]:
-    return list(session.exec(select(McpServer).where(McpServer.user_id == user_id)).all())
+    stmt = (
+        select(McpServer)
+        .where(McpServer.user_id == user_id)
+        .order_by(McpServer.created_at.desc(), McpServer.id.desc())
+    )
+    return list(session.exec(stmt).all())
 
 
 def get_mcp_server(session: Session, server_id: int) -> McpServer | None:
@@ -35,6 +40,28 @@ def get_mcp_server(session: Session, server_id: int) -> McpServer | None:
 def delete_mcp_server(session: Session, server: McpServer) -> None:
     session.delete(server)
     session.commit()
+
+
+def update_server_snapshots(
+    session: Session,
+    server: McpServer,
+    tools_snapshot_json: str | None,
+    prompts_snapshot_json: str | None,
+) -> McpServer:
+    server.tools_snapshot_json = tools_snapshot_json
+    server.prompts_snapshot_json = prompts_snapshot_json
+    session.add(server)
+    session.commit()
+    session.refresh(server)
+    return server
+
+
+def update_server_transport(session: Session, server: McpServer, transport: str) -> McpServer:
+    server.transport = transport
+    session.add(server)
+    session.commit()
+    session.refresh(server)
+    return server
 
 
 def update_server_headers(session: Session, server: McpServer, headers_json: str | None) -> McpServer:

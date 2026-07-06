@@ -14,6 +14,7 @@ from mcp_servers.service import (
     handle_oauth_callback,
     inspect_mcp_server,
     list_connectors,
+    list_mcp_commands,
     list_mcp_servers,
     start_server_oauth,
     toggle_tool,
@@ -28,9 +29,18 @@ class ConnectorResponse(BaseModel):
     url: str
     transport: str
     description: str
+    category: str = ""
     connected: bool
     server_id: int | None
     auth: str = "oauth"
+
+
+class ConnectorsPageResponse(BaseModel):
+    items: list[ConnectorResponse]
+    total: int
+    page: int
+    pages: int
+    limit: int
 
 
 class ConnectorAuthResponse(BaseModel):
@@ -70,9 +80,25 @@ class ToolInfo(BaseModel):
     enabled: bool
 
 
+class PromptArgumentInfo(BaseModel):
+    name: str
+    description: str = ""
+    required: bool = False
+
+
 class PromptInfo(BaseModel):
     name: str
     description: str
+    arguments: list[PromptArgumentInfo] = []
+
+
+class McpCommandResponse(BaseModel):
+    name: str
+    server: str
+    description: str
+    slash: str
+    usage: str
+    arguments: list[PromptArgumentInfo] = []
 
 
 class InspectResponse(BaseModel):
@@ -115,6 +141,15 @@ def list_route(
         McpServerResponse(id=s.id, name=s.name, url=s.url, transport=s.transport)
         for s in servers
     ]
+
+
+@router.get("/commands", response_model=list[McpCommandResponse])
+def commands_route(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> list[McpCommandResponse]:
+    """MCP slash-commands available to the current user in chat."""
+    return list_mcp_commands(session, user.id)
 
 
 @router.delete("/{server_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -169,12 +204,14 @@ def toggle_tool_route(
 
 
 # ── OAuth connectors ─────────────────────────────────────────────
-@router.get("/connectors", response_model=list[ConnectorResponse])
+@router.get("/connectors", response_model=ConnectorsPageResponse)
 def connectors_route(
+    page: int = 1,
+    limit: int = 12,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
-) -> list[dict]:
-    return list_connectors(session, user.id)
+) -> dict:
+    return list_connectors(session, user.id, page=page, limit=limit)
 
 
 @router.post("/connectors/{connector_key}/connect", response_model=ConnectorAuthResponse)

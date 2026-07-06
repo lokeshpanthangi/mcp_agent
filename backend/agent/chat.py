@@ -5,6 +5,8 @@ from fastapi import HTTPException, status
 from sqlmodel import Session
 
 from agent.engine import get_agent
+from agent.mcp_context import build_mcp_commands_section, server_usable_in_chat
+from agent.mcp_prompts import resolve_slash_command
 from database.conversations import (
     create_conversation,
     create_message,
@@ -59,7 +61,8 @@ async def chat_stream(
 
     servers = user_servers(session, user_id)  # includes code-defined servers.json
     await refresh_expired_tokens(session, servers)  # silently refresh OAuth tokens
-    mcp_config = {s.name: config_entry(s) for s in servers}
+    active = [s for s in servers if server_usable_in_chat(s)]
+    mcp_config = {s.name: config_entry(s) for s in active}
     disabled = disabled_tool_names(servers)
     eff = get_effective_settings(session, user_id)
 
@@ -67,9 +70,33 @@ async def chat_stream(
     # never fails the whole chat. The system prompt rides along as a system
     # message (the agent itself is prompt-agnostic and cached across users).
     agent = await get_agent(mcp_config, eff["api_key"], eff["model"], disabled)
-    messages = [("system", eff["system_prompt"]), *history]
+    mcp_section = build_mcp_commands_section(servers)
+    system = eff["system_prompt"] + mcp_section
+
+    slash = await resolve_slash_command(message, active, mcp_config)
+    if slash and slash.error:
+        async def error_stream() -> AsyncIterator[str]:
+            yield _sse("error", {"message": slash.error})
+            with Session(engine) as db:
+                create_message(db, conversation_id, "assistant", slash.error)
+            yield _sse("done", {})
+
+        return error_stream()
+
+    if slash and slash.messages:
+        prior = history[:-1]
+        expanded = list(slash.messages)
+        if slash.trailing_text:
+            expanded.append(("user", slash.trailing_text))
+        messages = [("system", system), *prior, *expanded]
+        slash_meta = {"name": slash.prompt_name, "server": slash.server_name}
+    else:
+        messages = [("system", system), *history]
+        slash_meta = None
 
     async def stream() -> AsyncIterator[str]:
+        if slash_meta:
+            yield _sse("mcp_prompt", slash_meta)
         answer_parts: list[str] = []
         reasoning_parts: list[str] = []
         try:

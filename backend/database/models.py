@@ -53,6 +53,9 @@ class McpServer(SQLModel, table=True):
     oauth_client_secret: str | None = None
     oauth_expires_at: datetime | None = None
     created_at: datetime = Field(default_factory=utcnow)
+    # Cached from last successful inspect — injected into the system prompt at chat time.
+    tools_snapshot_json: str | None = None
+    prompts_snapshot_json: str | None = None
 
 
 class OAuthState(SQLModel, table=True):

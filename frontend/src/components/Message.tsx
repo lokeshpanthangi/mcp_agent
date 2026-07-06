@@ -6,6 +6,8 @@ export interface ToolEvent {
   name: string;
   input?: unknown;
   output?: string;
+  kind?: "tool" | "prompt";
+  server?: string;
 }
 
 export interface UiMessage {
@@ -49,10 +51,13 @@ function ToolChip({ tool }: { tool: ToolEvent }) {
   return (
     <div className="tool">
       <button className="tool-head" onClick={() => setOpen((o) => !o)}>
-        <span className="tool-icon">🔧</span>
-        <span className="tool-name">{tool.name}</span>
-        <span className={`tool-status ${tool.output ? "done" : "running"}`}>
-          {tool.output ? "done" : "running…"}
+        <span className="tool-icon">{tool.kind === "prompt" ? "⌘" : "🔧"}</span>
+        <span className="tool-name">
+          {tool.kind === "prompt" ? `/${tool.name}` : tool.name}
+          {tool.server && <span className="dim"> · {tool.server}</span>}
+        </span>
+        <span className={`tool-status ${tool.output || tool.kind === "prompt" ? "done" : "running"}`}>
+          {tool.kind === "prompt" ? "loaded" : tool.output ? "done" : "running…"}
         </span>
         <span className="chevron">{open ? "▾" : "▸"}</span>
       </button>

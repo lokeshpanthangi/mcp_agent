@@ -19,6 +19,7 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState("");
   const [connecting, setConnecting] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   async function inspect() {
     setLoading(true);
@@ -49,13 +50,13 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
 
   async function login() {
     setConnecting(true);
+    setAuthError("");
     try {
       const { authorization_url } = await startServerOAuth(server.id);
       if (!authorization_url) {
         setConnecting(false);
         return;
       }
-      // Open the provider's login in a new tab; re-inspect once it signals done.
       const tab = window.open(authorization_url, "_blank");
       const onMsg = (e: MessageEvent) => {
         if (e.data === "mcp-oauth-done") finish();
@@ -70,7 +71,8 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
       const poll = setInterval(() => {
         if (!tab || tab.closed) finish();
       }, 800);
-    } catch {
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "OAuth login failed");
       setConnecting(false);
     }
   }
@@ -108,15 +110,20 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
 
       {!loading && data?.needs_auth && (
         <div className="auth-box">
-          <div className="auth-msg">🔒 This server requires authentication.</div>
+          <div className="auth-msg">
+            {data.supports_oauth
+              ? "🔒 This server requires authentication. Sign in with the provider or paste a token."
+              : "🔒 This server requires authentication."}
+          </div>
           {data.supports_oauth && (
             <div className="auth-row">
               <button className="primary-btn small" onClick={login} disabled={connecting}>
                 {connecting ? "Connecting…" : "Login"}
               </button>
-              <span className="dim">Sign in with the provider in a new tab.</span>
+              <span className="dim">Opens the provider&apos;s sign-in page in a new tab.</span>
             </div>
           )}
+          {authError && <div className="modal-error">{authError}</div>}
           <div className="auth-row">
             <input
               type="password"
@@ -161,15 +168,24 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
           {data.prompts.length > 0 && (
             <>
               <div className="section-label">
-                Prompts <span className="dim">({data.prompts.length})</span>
+                Slash commands <span className="dim">({data.prompts.length})</span>
               </div>
               <div className="prompt-list">
-                {data.prompts.map((p) => (
-                  <div className="prompt-item" key={p.name}>
-                    <span className="prompt-name">{p.name}</span>
-                    {p.description && <span className="prompt-desc">{p.description}</span>}
-                  </div>
-                ))}
+                {data.prompts.map((p) => {
+                  const req = (p.arguments ?? []).filter((a) => a.required).map((a) => a.name);
+                  const usage =
+                    req.length === 1
+                      ? `/${p.name} <${req[0]}>`
+                      : req.length > 1
+                        ? `/${p.name} ${req.map((n) => `${n}=...`).join(" ")}`
+                        : `/${p.name}`;
+                  return (
+                    <div className="prompt-item" key={p.name}>
+                      <span className="prompt-name">{usage}</span>
+                      {p.description && <span className="prompt-desc">{p.description}</span>}
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
@@ -182,36 +198,46 @@ function ServerCard({ server, onDetach }: { server: McpServer; onDetach: (id: nu
 export default function McpPanel({ onClose }: { onClose: () => void }) {
   const [servers, setServers] = useState<McpServer[]>([]);
   const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [connectorPage, setConnectorPage] = useState(1);
+  const [connectorPages, setConnectorPages] = useState(1);
+  const [connectorTotal, setConnectorTotal] = useState(0);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function refresh() {
+  async function refresh(page = connectorPage) {
     try {
-      const [s, c] = await Promise.all([listMcp(), listConnectors()]);
+      const [s, c] = await Promise.all([listMcp(), listConnectors(page)]);
       setServers(s);
-      setConnectors(c);
+      setConnectors(c.items);
+      setConnectorPage(c.page);
+      setConnectorPages(c.pages);
+      setConnectorTotal(c.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
     }
   }
 
   useEffect(() => {
-    refresh();
+    refresh(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function goToPage(page: number) {
+    if (page < 1 || page > connectorPages || page === connectorPage) return;
+    refresh(page);
+  }
 
   async function connect(c: Connector) {
     setConnecting(c.key);
     setError("");
     try {
       const { authorization_url } = await connectConnector(c.key);
-      // Token connectors have no auth URL — a server row was created; refresh so
-      // its card appears and prompts for a personal access token.
       if (!authorization_url) {
         setConnecting(null);
-        await refresh();
+        await refresh(connectorPage);
         return;
       }
       const tab = window.open(authorization_url, "_blank");
@@ -223,7 +249,7 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
         window.removeEventListener("message", onMsg);
         clearInterval(poll);
         setConnecting(null);
-        refresh();
+        refresh(connectorPage);
       };
       window.addEventListener("message", onMsg);
       // Fallback: also poll for the auth tab closing.
@@ -245,7 +271,7 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
       await attachMcp(name.trim(), url.trim());
       setName("");
       setUrl("");
-      await refresh();
+      await refresh(connectorPage);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to attach");
     } finally {
@@ -255,7 +281,7 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
 
   async function remove(id: number) {
     await detachMcp(id);
-    await refresh();
+    await refresh(connectorPage);
   }
 
   return (
@@ -272,7 +298,12 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
           are shown below — toggle exactly which tools the agent may use.
         </p>
 
-        <div className="section-label">Connectors</div>
+        <div className="section-label">
+          Connectors{" "}
+          <span className="dim">
+            ({connectorTotal} total · page {connectorPage} of {connectorPages})
+          </span>
+        </div>
         <div className="connector-grid">
           {connectors.map((c) => (
             <button
@@ -282,6 +313,7 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
               onClick={() => (c.connected ? undefined : connect(c))}
               title={c.description}
             >
+              {c.category && <span className="connector-cat">{c.category}</span>}
               <span className="connector-name">{c.name}</span>
               <span className="connector-desc">{c.description}</span>
               <span className="connector-status">
@@ -290,6 +322,27 @@ export default function McpPanel({ onClose }: { onClose: () => void }) {
             </button>
           ))}
         </div>
+        {connectorPages > 1 && (
+          <div className="connector-pager">
+            <button
+              className="pager-btn"
+              disabled={connectorPage <= 1 || connecting !== null}
+              onClick={() => goToPage(connectorPage - 1)}
+            >
+              ← Previous
+            </button>
+            <span className="pager-info">
+              Page {connectorPage} of {connectorPages}
+            </span>
+            <button
+              className="pager-btn"
+              disabled={connectorPage >= connectorPages || connecting !== null}
+              onClick={() => goToPage(connectorPage + 1)}
+            >
+              Next →
+            </button>
+          </div>
+        )}
 
         <div className="section-label">Add by URL</div>
         <form className="mcp-form" onSubmit={add}>

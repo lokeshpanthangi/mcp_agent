@@ -3,11 +3,18 @@ import hashlib
 import json
 import logging
 
-from langchain.agents import create_agent
+from deepagents import (
+    GeneralPurposeSubagentProfile,
+    HarnessProfile,
+    create_deep_agent,
+    register_harness_profile,
+)
+from deepagents.middleware.filesystem import FilesystemPermission
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_ollama import ChatOllama
 
 from adapters.ollama import effective_base_url
+from agent.tools.scrape import scrape_webpage
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -16,6 +23,22 @@ logger = logging.getLogger(__name__)
 # so they can be cached and shared by (mcp tools + api key + disabled tools).
 # The system prompt is injected per-message, so it isn't part of the cache key.
 _agent_cache: dict[str, object] = {}
+
+# Deep Agent built-ins include shell execution and filesystem writes. `execute`
+# needs a sandbox backend; file tools use in-memory state by default (not the
+# host repo). We still block shell execution for the web chat surface.
+register_harness_profile(
+    "ollama",
+    HarnessProfile(
+        excluded_tools=frozenset({"execute"}),
+        general_purpose_subagent=GeneralPurposeSubagentProfile(enabled=False),
+    ),
+)
+
+_BUILTIN_TOOLS = [scrape_webpage]
+_CHAT_PERMISSIONS = [
+    FilesystemPermission(operations=["write"], paths=["/**"], mode="deny"),
+]
 
 
 def make_model(api_key: str | None, model: str | None = None) -> ChatOllama:
@@ -63,7 +86,7 @@ async def get_agent(
     model: str | None = None,
     disabled_tools: set[str] | None = None,
 ):
-    """Build (or reuse) a ReAct agent bound to every tool from the MCP servers.
+    """Build (or reuse) a Deep Agent bound to MCP tools and built-in helpers.
 
     mcp_config is the MultiServerMCPClient shape:
         {"server_name": {"url": ..., "transport": ..., "headers": {...}?}}
@@ -78,11 +101,18 @@ async def get_agent(
         return _agent_cache[key]
 
     all_ok = True
-    tools = []
+    tools = list(_BUILTIN_TOOLS)
     if mcp_config:
-        tools, all_ok = await _load_tools(mcp_config, disabled)
+        mcp_tools, all_ok = await _load_tools(mcp_config, disabled)
+        tools.extend(mcp_tools)
 
-    agent = create_agent(make_model(api_key, model), tools)
+    tools = [t for t in tools if t.name not in disabled]
+
+    agent = create_deep_agent(
+        model=make_model(api_key, model),
+        tools=tools,
+        permissions=_CHAT_PERMISSIONS,
+    )
     if all_ok:
         _agent_cache[key] = agent  # only cache a fully-loaded agent
     return agent
