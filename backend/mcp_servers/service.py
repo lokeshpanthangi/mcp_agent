@@ -140,7 +140,7 @@ async def inspect_mcp_server(session: Session, user_id: int, server_id: int) -> 
     and prompts, or a needs_auth / error signal.
     """
     server = _owned_server(session, user_id, server_id)
-    connector = CONNECTORS_BY_KEY.get(server.connector_key or "")
+    connector = CONNECTORS_BY_KEY.get(server.connector_key or "") or {}
     headers = json.loads(server.headers_json) if server.headers_json else None
 
     # Catalog token connectors without credentials — prompt for a PAT.

@@ -12,7 +12,7 @@ def server_usable_in_chat(server: McpServer) -> bool:
         return True
     if server.tools_snapshot_json:
         return True
-    connector = CONNECTORS_BY_KEY.get(server.connector_key or "")
+    connector = CONNECTORS_BY_KEY.get(server.connector_key or "") or {}
     return connector.get("auth") == "open"
 
 

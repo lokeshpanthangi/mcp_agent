@@ -1,5 +1,6 @@
 import json
 from collections.abc import AsyncIterator
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlmodel import Session
@@ -71,7 +72,8 @@ async def chat_stream(
     # message (the agent itself is prompt-agnostic and cached across users).
     agent = await get_agent(mcp_config, eff["api_key"], eff["model"], disabled)
     mcp_section = build_mcp_commands_section(servers)
-    system = eff["system_prompt"] + mcp_section
+    today = datetime.now(timezone.utc).strftime("%A, %B %d, %Y (UTC)")
+    system = f"{eff['system_prompt']}\n\nToday's date is {today}." + mcp_section
 
     slash = await resolve_slash_command(message, active, mcp_config)
     if slash and slash.error:
