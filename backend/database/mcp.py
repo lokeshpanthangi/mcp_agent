@@ -166,9 +166,20 @@ def sync_code_servers(session: Session, user_id: int) -> None:
         if server is None:
             server = McpServer(user_id=user_id, connector_key=connector_key)
         server.name = e["name"]
-        server.url = e["url"]
-        server.transport = e.get("transport", "streamable_http")
-        server.headers_json = json.dumps(e["headers"]) if e.get("headers") else None
+        if "command" in e:
+            # Local stdio server (spawned as a subprocess) — no URL or headers.
+            args = e.get("args") or []
+            server.transport = "stdio"
+            server.command = e["command"]
+            server.args_json = json.dumps(args)
+            server.url = f"{e['command']} {' '.join(args)}".strip()
+            server.headers_json = None
+        else:
+            server.url = e["url"]
+            server.transport = e.get("transport", "streamable_http")
+            server.headers_json = json.dumps(e["headers"]) if e.get("headers") else None
+            server.command = None
+            server.args_json = None
         session.add(server)
 
     for server in list_mcp_servers_for_user(session, user_id):

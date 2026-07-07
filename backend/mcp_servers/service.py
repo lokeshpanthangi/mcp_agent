@@ -8,7 +8,7 @@ from fastapi import HTTPException, status
 from sqlmodel import Session
 
 from adapters import oauth as mcp_oauth
-from adapters.mcp_client import infer_transport, inspect_server_with_fallback
+from adapters.mcp_client import infer_transport, inspect_server, inspect_server_with_fallback
 from config import settings
 from database.mcp import (
     create_mcp_server,
@@ -40,6 +40,12 @@ SERVER_PREFIX = "server:"  # OAuthState.connector_key marker for an attached-by-
 # ── shared helpers ───────────────────────────────────────────────
 def config_entry(server: McpServer) -> dict:
     """The single-server MultiServerMCPClient config shape for a stored row."""
+    if server.transport == "stdio":
+        return {
+            "command": server.command,
+            "args": json.loads(server.args_json) if server.args_json else [],
+            "transport": "stdio",
+        }
     entry: dict = {"url": server.url, "transport": server.transport}
     if server.headers_json:
         entry["headers"] = json.loads(server.headers_json)
@@ -140,6 +146,31 @@ async def inspect_mcp_server(session: Session, user_id: int, server_id: int) -> 
     and prompts, or a needs_auth / error signal.
     """
     server = _owned_server(session, user_id, server_id)
+
+    if server.transport == "stdio":
+        # Local subprocess — no URL, headers, or OAuth to consider.
+        result = await inspect_server(server.name, config_entry(server), settings.TOOL_TIMEOUT_SECONDS)
+        disabled = _disabled_set(server)
+        tools = [{**t, "enabled": t["name"] not in disabled} for t in result["tools"]]
+        if result["ok"]:
+            update_server_snapshots(
+                session,
+                server,
+                json.dumps(result["tools"]),
+                json.dumps(result["prompts"]) if result["prompts"] else None,
+            )
+        return {
+            "id": server.id,
+            "name": server.name,
+            "url": server.url,
+            "ok": result["ok"],
+            "needs_auth": False,
+            "supports_oauth": False,
+            "error": result["error"],
+            "tools": tools,
+            "prompts": result["prompts"],
+        }
+
     connector = CONNECTORS_BY_KEY.get(server.connector_key or "") or {}
     headers = json.loads(server.headers_json) if server.headers_json else None
 

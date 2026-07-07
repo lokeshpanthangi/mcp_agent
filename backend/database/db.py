@@ -26,6 +26,8 @@ def _add_missing_columns() -> None:
         "mcpserver": [
             ("tools_snapshot_json", "TEXT"),
             ("prompts_snapshot_json", "TEXT"),
+            ("command", "VARCHAR"),
+            ("args_json", "TEXT"),
         ],
     }
     with engine.begin() as conn:

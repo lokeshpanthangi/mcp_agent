@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "key": "wc26",
+    "name": "World Cup 2026",
+    "command": "npx",
+    "args": ["-y", "wc26-mcp"]
+  }
+]

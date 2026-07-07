@@ -41,9 +41,12 @@ class McpServer(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     name: str
-    url: str
+    url: str  # for stdio servers, a human-readable "command args" descriptor
     transport: str = "streamable_http"
     headers_json: str | None = None
+    # stdio servers (spawned as a local subprocess, e.g. `npx -y some-mcp-server`)
+    command: str | None = None
+    args_json: str | None = None
     disabled_tools_json: str | None = None  # JSON list of tool names turned OFF
     connector_key: str | None = None  # set for built-in connectors ("github") and code servers ("code:<key>")
     # OAuth bookkeeping (for connectors) — enables silent token refresh.

@@ -1,14 +1,20 @@
 """Loader for code-defined MCP servers (servers.json).
 
 Developers add MCP servers here in code; they auto-load and show in the UI
-alongside the ones users connect through the interface. Each entry:
+alongside the ones users connect through the interface. Two entry shapes:
 
+Remote (URL-based):
     {"key": "weather", "name": "Weather", "url": "https://.../mcp",
      "transport": "streamable_http", "headers": {"Authorization": "Bearer ${TOKEN}"}}
 
-`key`/`name`/`url` are required; `transport` defaults to "streamable_http";
-`headers` is optional. Any ${ENV_VAR} inside a header value is filled from the
-environment so secrets never live in the file.
+    `key`/`name`/`url` are required; `transport` defaults to "streamable_http";
+    `headers` is optional. Any ${ENV_VAR} inside a header value is filled from
+    the environment so secrets never live in the file.
+
+Local (stdio — spawned as a subprocess):
+    {"key": "wc26", "name": "World Cup 2026", "command": "npx", "args": ["-y", "wc26-mcp"]}
+
+    `command`/`args` are required instead of `url`; no `transport` or `headers`.
 """
 
 import json
